@@ -56,6 +56,15 @@ jobs:
           chmod +x ./setup_conda.sh
           chmod +x ./chaquo_build/gradlew
 
+      - name: Synchronize source to chaquo_build
+        run: |
+          rm -rf chaquo_build/catvod/src chaquo_build/chaquo/src
+          cp -r catvod/src chaquo_build/catvod/
+          cp catvod/proguard-rules.pro chaquo_build/catvod/ || true
+          cp -r chaquo/src chaquo_build/chaquo/
+          cp chaquo/requirements.txt chaquo_build/chaquo/
+          cp chaquo/proguard-rules.pro chaquo_build/chaquo/ || true
+
       # Step 1: Independent Chaquopy AAR Build (Decoupled to avoid Gradle conflicts)
       - name: Build Chaquopy AAR
         run: |
