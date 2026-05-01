@@ -3,15 +3,15 @@ plugins {
 }
 
 def localProps = new Properties()
-rootProject.file('local.properties').withInputStream {
-    localProps.load(it)
+if (rootProject.file("local.properties").exists()) {
+    rootProject.file("local.properties").withInputStream { localProps.load(it) }
 }
 
 android {
     namespace = 'com.fongmi.android.tv'
 
     compileSdk {
-        version = release(37)
+        version = release(36) { it.minorApiLevel = 1 }
     }
 
     defaultConfig {
