@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.net.Uri;
 import android.net.http.SslError;
 import android.text.TextUtils;
+import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.CookieManager;
 import android.webkit.SslErrorHandler;
@@ -14,17 +15,20 @@ import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.FrameLayout;
 
 import androidx.annotation.NonNull;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.Setting;
-import com.fongmi.android.tv.api.config.RuleConfig;
+import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.api.config.VodConfig;
+import com.fongmi.android.tv.impl.IWebView;
 import com.fongmi.android.tv.impl.ParseCallback;
 import com.fongmi.android.tv.ui.dialog.WebDialog;
 import com.fongmi.android.tv.utils.Sniffer;
+import com.fongmi.android.tv.utils.UrlUtil;
 import com.github.catvod.crawler.Spider;
 import com.github.catvod.crawler.SpiderDebug;
 import com.github.catvod.utils.Util;
@@ -35,44 +39,42 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-public class CustomWebView extends WebView implements DialogInterface.OnDismissListener {
+public class SystemWebViewWrapper extends FrameLayout implements IWebView, DialogInterface.OnDismissListener {
 
-    private static final String TAG = CustomWebView.class.getSimpleName();
-
+    private static final String TAG = SystemWebViewWrapper.class.getSimpleName();
     private static final Pattern PLAYER = Pattern.compile("player.*https?://");
     private static final String BLANK = "about:blank";
     private static final int MAX_URLS = 5;
 
-    private final AtomicReference<ParseCallback> callbackRef = new AtomicReference<>();
+    private WebView webView;
     private LinkedHashSet<String> urls;
     private WebResourceResponse empty;
+    private ParseCallback callback;
     private WebDialog dialog;
     private Runnable timer;
-    private boolean stopped;
     private boolean detect;
+    private boolean stop;
     private String click;
     private String from;
     private String key;
     private String url;
 
-    public static CustomWebView create(@NonNull Context context) {
-        return new CustomWebView(context);
-    }
-
-    private CustomWebView(@NonNull Context context) {
+    public SystemWebViewWrapper(@NonNull Context context) {
         super(context);
-        initSettings();
+        init();
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private void initSettings() {
+    private void init() {
+        webView = new WebView(getContext());
+        addView(webView, new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+
         timer = () -> stop(true);
         urls = new LinkedHashSet<>();
         empty = new WebResourceResponse("text/plain", "utf-8", new ByteArrayInputStream("".getBytes()));
-        WebSettings setting = getSettings();
+        WebSettings setting = webView.getSettings();
         setting.setSupportZoom(true);
         setting.setUseWideViewPort(true);
         setting.setDatabaseEnabled(true);
@@ -85,13 +87,19 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
         setting.setMediaPlaybackRequiresUserGesture(false);
         setting.setJavaScriptCanOpenWindowsAutomatically(false);
         setting.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
-        setWebViewClient(webViewClient());
+        webView.setWebViewClient(webViewClient());
     }
 
-    public CustomWebView start(String key, String from, Map<String, String> headers, String url, String click, ParseCallback callback, boolean detect) {
+    @Override
+    public View getView() {
+        return this;
+    }
+
+    @Override
+    public IWebView start(String key, String from, Map<String, String> headers, String url, String click, ParseCallback callback, boolean detect) {
         SpiderDebug.log(TAG, "key=%s, from=%s, click=%s, url=%s, headers=%s", key, from, click, url, headers);
         App.post(timer, Constant.TIMEOUT_PARSE_WEB);
-        callbackRef.set(callback);
+        this.callback = callback;
         this.detect = detect;
         this.click = click;
         this.from = from;
@@ -102,15 +110,15 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
     }
 
     private void start(Map<String, String> headers) {
-        CookieManager.getInstance().setAcceptThirdPartyCookies(this, true);
+        CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
         checkHeader(url, headers);
-        loadUrl(url, headers);
+        webView.loadUrl(url, headers);
     }
 
     private void checkHeader(String url, Map<String, String> headers) {
         for (String key : headers.keySet()) {
-            if (HttpHeaders.USER_AGENT.equalsIgnoreCase(key)) getSettings().setUserAgentString(headers.get(key));
-            else if (HttpHeaders.COOKIE.equalsIgnoreCase(key)) CookieManager.getInstance().setCookie(url, headers.get(key));
+            if (HttpHeaders.USER_AGENT.equalsIgnoreCase(key)) webView.getSettings().setUserAgentString(headers.get(key));
+            if (HttpHeaders.COOKIE.equalsIgnoreCase(key)) CookieManager.getInstance().setCookie(url, headers.get(key));
         }
     }
 
@@ -120,7 +128,7 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
                 String url = request.getUrl().toString();
                 String host = request.getUrl().getHost();
-                if (TextUtils.isEmpty(host) || isAd(host)) return empty;
+                if (TextUtils.isEmpty(host) || isAd(host) || stop) return empty;
                 Map<String, String> headers = request.getRequestHeaders();
                 if (url.contains("/cdn-cgi/challenge-platform/")) post(() -> showDialog());
                 if (detect && PLAYER.matcher(url).find() && addUrl(url)) onParseAdd(headers, url);
@@ -131,19 +139,20 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                if (url.equals(BLANK)) return;
+                if (url.equals(BLANK) || stop) return;
                 evaluate(getScript(url), 0);
             }
 
             @Override
             @SuppressLint("WebViewClientOnReceivedSslError")
             public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                if (stop) return;
                 handler.proceed();
             }
 
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                return false;
+                return stop;
             }
         };
     }
@@ -156,7 +165,7 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
     private void showDialog() {
         if (dialog != null || App.activity() == null) return;
         if (getParent() != null) ((ViewGroup) getParent()).removeView(this);
-        dialog = new WebDialog(this).show();
+        dialog = new WebDialog(webView).show();
         App.removeCallbacks(timer);
     }
 
@@ -178,17 +187,22 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
     }
 
     private void evaluate(List<String> script, int index) {
-        if (index >= script.size()) return;
+        if (index >= script.size() || webView == null || stop) return;
         String js = script.get(index);
         if (TextUtils.isEmpty(js)) {
             evaluate(script, index + 1);
         } else {
-            evaluateJavascript(js, value -> evaluate(script, index + 1));
+            webView.evaluateJavascript(js, value -> {
+                if (!stop && webView != null) {
+                    evaluate(script, index + 1);
+                }
+            });
         }
     }
 
     private boolean isAd(String host) {
-        for (String ad : RuleConfig.get().getAds()) if (Util.containOrMatch(host, ad)) return true;
+        for (String ad : VodConfig.get().getAds()) if (Util.containOrMatch(host, ad)) return true;
+        for (String ad : LiveConfig.get().getAds()) if (Util.containOrMatch(host, ad)) return true;
         return false;
     }
 
@@ -204,30 +218,65 @@ public class CustomWebView extends WebView implements DialogInterface.OnDismissL
     }
 
     private void onParseAdd(Map<String, String> headers, String url) {
-        ParseCallback cb = callbackRef.get();
-        if (cb == null) return;
-        post(() -> CustomWebView.create(App.get()).start(key, from, headers, url, click, cb, false));
+        post(() -> {
+            SystemWebViewWrapper newWebView = new SystemWebViewWrapper(getContext());
+            // Don't add to parent - just use it for sniffing like CustomWebView
+            newWebView.start(key, from, headers, url, click, callback, false);
+        });
     }
 
     private void onParseSuccess(Map<String, String> headers, String url) {
-        ParseCallback cb = callbackRef.getAndSet(null);
-        if (cb != null) cb.onParseSuccess(headers, url, from);
+        if (callback != null) callback.onParseSuccess(headers, url, from);
         post(() -> stop(false));
+        callback = null;
     }
 
     private void onParseError() {
-        ParseCallback cb = callbackRef.getAndSet(null);
-        if (cb != null) cb.onParseError();
+        if (callback != null) callback.onParseError();
+        callback = null;
     }
 
+    @Override
     public void stop(boolean error) {
-        if (stopped) return;
-        stopped = true;
+        if (stop) return;
+        stop = true;
         hideDialog();
-        stopLoading();
-        loadUrl(BLANK);
+        if (webView != null) {
+            webView.stopLoading();
+            webView.loadUrl(BLANK);
+        }
         App.removeCallbacks(timer);
         if (error) onParseError();
-        else callbackRef.set(null);
+        else callback = null;
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        // 在视图从窗口分离时清理资源
+        if (!stop) {
+            stop(false);
+        }
+    }
+
+    @Override
+    public void destroy() {
+        stop(false);
+        // 清除 WebView 的所有引用和回调
+        if (webView != null) {
+            webView.stopLoading();
+            webView.loadUrl("about:blank");
+            webView.clearHistory();
+            webView.clearCache(true);
+            webView.clearFormData();
+            webView.clearMatches();
+            webView.clearSslPreferences();
+            webView.removeAllViews();
+            webView.destroy();
+            webView = null;
+        }
+        if (getParent() != null) {
+            ((ViewGroup) getParent()).removeView(this);
+        }
     }
 }

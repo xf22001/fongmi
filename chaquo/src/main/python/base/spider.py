@@ -3,7 +3,8 @@ import os
 import json
 import time
 import requests
-from lxml import etree
+from bs4 import BeautifulSoup
+import xml.etree.ElementTree as ET
 from com.github.catvod import Proxy
 from com.chaquo.python import Python
 from abc import abstractmethod, ABCMeta
@@ -103,7 +104,10 @@ class Spider(metaclass=ABCMeta):
         return rsp
 
     def html(self, content):
-        return etree.HTML(content)
+        return BeautifulSoup(content, 'html.parser')
+
+    def xml(self, content):
+        return ET.fromstring(content)
 
     def str2json(str):
         return json.loads(str)

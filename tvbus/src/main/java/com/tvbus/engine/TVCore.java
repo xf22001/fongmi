@@ -102,7 +102,7 @@ public class TVCore implements Runnable {
     public void option(String key, List<String> values) {
         try {
             if (values.isEmpty()) return;
-            values.removeIf(TextUtils::isEmpty);
+            for (int i = values.size() - 1; i >= 0; i--) if (TextUtils.isEmpty(values.get(i))) values.remove(i);
             for (String value : values) setOption(handle, key, value);
         } catch (Throwable ignored) {
         }

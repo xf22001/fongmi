@@ -66,6 +66,14 @@ public class Setting {
         Prefers.put("reset", reset);
     }
 
+    public static String getSniffer() {
+        return Prefers.getString("sniffer", "system");
+    }
+
+    public static void putSniffer(String sniffer) {
+        Prefers.put("sniffer", sniffer);
+    }
+
     public static int getRender() {
         return Prefers.getInt("render", 0);
     }

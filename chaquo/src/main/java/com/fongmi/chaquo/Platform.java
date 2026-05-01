@@ -21,13 +21,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class Platform extends Python.Platform {
 
@@ -39,6 +37,10 @@ public class Platform extends Python.Platform {
     private final AssetManager am;
     private final Context context;
     private String ABI;
+
+    public static Platform create() {
+        return new Platform();
+    }
 
     public Platform() {
         this.context = Init.context();
@@ -65,15 +67,19 @@ public class Platform extends Python.Platform {
         if (ABI == null) throw new RuntimeException("No supported ABI found in: " + supportedAbis);
     }
 
-    public static Platform create() {
-        return new Platform();
-    }
-
     @Override
     public @NotNull String getPath() {
         String assetDir = new File(context.getFilesDir(), Common.ASSET_DIR).getAbsolutePath();
-        List<String> pathAssets = Arrays.asList(Common.assetZip(Common.ASSET_STDLIB, Common.ABI_COMMON), Common.assetZip(Common.ASSET_BOOTSTRAP), Common.ASSET_BOOTSTRAP_NATIVE + "/" + ABI);
-        String pythonPath = pathAssets.stream().map(asset -> assetDir + "/" + asset).collect(Collectors.joining(":"));
+        List<String> pathAssets = new ArrayList<>();
+        pathAssets.add(Common.assetZip(Common.ASSET_STDLIB, Common.ABI_COMMON));
+        pathAssets.add(Common.assetZip(Common.ASSET_BOOTSTRAP));
+        pathAssets.add(Common.ASSET_BOOTSTRAP_NATIVE + "/" + ABI);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < pathAssets.size(); i++) {
+            sb.append(assetDir).append("/").append(pathAssets.get(i));
+            if (i < pathAssets.size() - 1) sb.append(":");
+        }
+        String pythonPath = sb.toString();
         List<String> extractionList = new ArrayList<>(pathAssets);
         extractionList.add(Common.ASSET_CACERT);
         try {
@@ -143,19 +149,23 @@ public class Platform extends Python.Platform {
         File outDir = new File(context.getFilesDir(), Common.ASSET_DIR + "/" + dir);
         File[] list = outDir.listFiles();
         if (list == null) return;
-        Arrays.stream(list).forEach(outFile -> {
+        for (File outFile : list) {
             String name = outFile.getName();
             if (outFile.isDirectory()) {
                 cleanExtractedDir(dir + "/" + name, assetsJson);
             } else if (!assetsJson.has(dir + "/" + name)) {
                 outFile.delete();
             }
-        });
+        }
     }
 
     private void deleteRecursive(File file) {
         File[] children = file.listFiles();
-        if (children != null) Arrays.stream(children).forEach(this::deleteRecursive);
+        if (children != null) {
+            for (File child : children) {
+                deleteRecursive(child);
+            }
+        }
         file.delete();
     }
 

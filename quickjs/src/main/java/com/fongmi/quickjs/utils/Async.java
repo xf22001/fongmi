@@ -4,40 +4,42 @@ import com.whl.quickjs.wrapper.JSCallFunction;
 import com.whl.quickjs.wrapper.JSFunction;
 import com.whl.quickjs.wrapper.JSObject;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 public class Async {
 
-    private CompletableFuture<Object> future;
-
-    private final JSCallFunction success = args -> {
-        future.complete(args != null && args.length > 0 ? args[0] : null);
-        return null;
-    };
-
-    private final JSCallFunction error = args -> {
-        String msg = args != null && args.length > 0 && args[0] != null ? args[0].toString() : "";
-        future.completeExceptionally(new Exception(msg));
-        return null;
-    };
+    private final SettableFuture<Object> future;
+    private final JSCallFunction success;
+    private final JSCallFunction error;
 
     private Async() {
-        this.future = new CompletableFuture<>();
+        this.future = new SettableFuture<>();
+        
+        this.success = args -> {
+            this.future.set(args != null && args.length > 0 ? args[0] : null);
+            return null;
+        };
+
+        this.error = args -> {
+            String msg = args != null && args.length > 0 && args[0] != null ? args[0].toString() : "";
+            this.future.setException(new Exception(msg));
+            return null;
+        };
     }
 
-    public static CompletableFuture<Object> run(JSObject object, String name, Object... args) {
+    public static Future<Object> run(JSObject object, String name, Object... args) {
         return new Async().call(object, name, args);
     }
 
-    private CompletableFuture<Object> call(JSObject object, String name, Object... args) {
+    private Future<Object> call(JSObject object, String name, Object... args) {
         JSFunction func = object.getJSFunction(name);
         if (func == null) return empty();
         call(func, args);
         return future;
     }
 
-    private CompletableFuture<Object> empty() {
-        future.complete(null);
+    private Future<Object> empty() {
+        future.set(null);
         return future;
     }
 
@@ -45,9 +47,9 @@ public class Async {
         try {
             Object result = func.call(args);
             if (result instanceof JSObject) then((JSObject) result);
-            else future.complete(result);
+            else future.set(result);
         } catch (Throwable e) {
-            future.completeExceptionally(e);
+            future.setException(e);
         } finally {
             func.release();
         }
@@ -56,7 +58,7 @@ public class Async {
     private void then(JSObject promise) {
         JSFunction then = promise.getJSFunction("then");
         if (then == null) {
-            future.complete(promise);
+            future.set(promise);
         } else {
             consume(then, success);
             consume(promise.getJSFunction("catch"), error);
@@ -71,5 +73,4 @@ public class Async {
             func.release();
         }
     }
-
 }

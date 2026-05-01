@@ -8,10 +8,10 @@ import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.api.loader.BaseLoader;
 import com.fongmi.android.tv.bean.Parse;
 import com.fongmi.android.tv.bean.Result;
+import com.fongmi.android.tv.impl.IWebView;
 import com.fongmi.android.tv.impl.ParseCallback;
 import com.fongmi.android.tv.server.Server;
-import com.fongmi.android.tv.ui.custom.CustomWebView;
-import com.fongmi.android.tv.utils.Task;
+import com.fongmi.android.tv.ui.custom.WebViewFactory;
 import com.fongmi.android.tv.utils.UrlUtil;
 import com.fongmi.android.tv.utils.WebViewUtil;
 import com.github.catvod.net.OkHttp;
@@ -29,30 +29,27 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import okhttp3.Response;
 
 public class ParseJob implements ParseCallback {
 
-    private final AtomicBoolean done = new AtomicBoolean();
-    private final List<CustomWebView> webViews;
+    private final List<IWebView> webViews;
     private ExecutorService executor;
     private ExecutorService infinite;
     private ParseCallback callback;
     private Parse parse;
 
-    private ParseJob(ParseCallback callback) {
-        this.executor = Executors.newSingleThreadExecutor();
+    public static ParseJob create(ParseCallback callback) {
+        return new ParseJob(callback);
+    }
+
+    public ParseJob(ParseCallback callback) {
+        this.executor = Executors.newFixedThreadPool(2);
         this.infinite = Executors.newCachedThreadPool();
         this.webViews = new ArrayList<>();
         this.callback = callback;
-    }
-
-    public static ParseJob create(ParseCallback callback) {
-        return new ParseJob(callback);
     }
 
     public ParseJob start(Result result, boolean useParse) {
@@ -77,10 +74,13 @@ public class ParseJob implements ParseCallback {
     }
 
     private void execute(Result result) {
-        Future<?> task = executor.submit(getTask(result));
-        Task.schedule(() -> {
-            if (task.cancel(true)) onParseError();
-        }, Constant.TIMEOUT_PARSE_DEF, TimeUnit.MILLISECONDS);
+        executor.execute(() -> {
+            try {
+                executor.submit(getTask(result)).get(Constant.TIMEOUT_PARSE_DEF, TimeUnit.MILLISECONDS);
+            } catch (Throwable e) {
+                onParseError();
+            }
+        });
     }
 
     private Runnable getTask(Result result) {
@@ -95,31 +95,31 @@ public class ParseJob implements ParseCallback {
 
     private void doInBackground(String key, String webUrl, String flag) throws Throwable {
         switch (parse.getType()) {
-            case 0:
+            case 0: //嗅探
                 startWeb(key, parse, webUrl);
                 break;
-            case 1:
+            case 1: //Json
                 jsonParse(parse, webUrl, true);
                 break;
-            case 2:
+            case 2: //Json擴展
                 jsonExtend(webUrl);
                 break;
-            case 3:
+            case 3: //Json聚合
                 jsonMix(webUrl, flag);
                 break;
-            case 4:
-                superParse(webUrl, flag);
+            case 4: //超級解析
+                godParse(webUrl, flag);
                 break;
         }
     }
 
-    private void jsonParse(Parse item, String webUrl, boolean fatal) throws Exception {
+    private void jsonParse(Parse item, String webUrl, boolean error) throws Exception {
         try (Response res = OkHttp.newCall(item.getUrl() + webUrl, item.getHeader()).execute()) {
             JsonObject object = Json.parse(res.body().string()).getAsJsonObject();
             String url = Json.safeString(object, "url");
             JsonObject data = object.getAsJsonObject("data");
             if (url.isEmpty()) url = Json.safeString(data, "url");
-            checkResult(getHeader(object), url, item.getName(), fatal);
+            checkResult(getHeader(object), url, item.getName(), error);
         }
     }
 
@@ -135,7 +135,7 @@ public class ParseJob implements ParseCallback {
         checkResult(Result.fromObject(BaseLoader.get().jsonExtMix(flag, parse.getUrl(), parse.getName(), jxs, webUrl)));
     }
 
-    private void superParse(String webUrl, String flag) throws Exception {
+    private void godParse(String webUrl, String flag) throws Exception {
         List<Parse> json = VodConfig.get().getParses(1, flag);
         List<Parse> webs = VodConfig.get().getParses(0, flag);
         int count = json.size() + (webs.isEmpty() ? 0 : 1);
@@ -156,15 +156,18 @@ public class ParseJob implements ParseCallback {
         }
     }
 
-    private void checkResult(Map<String, String> headers, String url, String from, boolean fatal) {
-        if (url.length() > 40) onParseSuccess(headers, url, from);
-        else if (fatal) onParseError();
+    private void checkResult(Map<String, String> headers, String url, String from, boolean error) {
+        if (url.length() > 40) {
+            onParseSuccess(headers, url, from);
+        } else if (error) {
+            onParseError();
+        }
     }
 
     private void checkResult(Result result) {
         result.setHeader(parse.getHeader());
         if (result.getUrl().isEmpty()) onParseError();
-        else if (result.needParse()) startWeb(result.getHeader(), UrlUtil.convert(result.getUrl().v()));
+        else if (result.getParse() == 1) startWeb(result.getHeader(), UrlUtil.convert(result.getUrl().v()));
         else onParseSuccess(result.getHeader(), result.getUrl().v(), result.getJxFrom());
     }
 
@@ -183,22 +186,22 @@ public class ParseJob implements ParseCallback {
     }
 
     private void startWeb(String key, String from, Map<String, String> headers, String url, String click) {
-        if (!WebViewUtil.support()) {
-            onParseError();
+        if (WebViewUtil.support()) {
+            WebViewFactory.create(App.get(), webView -> webViews.add(webView.start(key, from, headers, url, click, this, !url.contains("player/?url="))));
         } else {
-            App.post(() -> webViews.add(CustomWebView.create(App.get()).start(key, from, headers, url, click, this, !url.contains("player/?url="))));
+            onParseError();
         }
     }
 
     private Map<String, String> getHeader(JsonObject object) {
         Map<String, String> headers = new HashMap<>();
         for (Map.Entry<String, JsonElement> entry : object.entrySet()) if (!entry.getValue().isJsonNull() && (entry.getKey().equalsIgnoreCase(HttpHeaders.USER_AGENT) || entry.getKey().equalsIgnoreCase(HttpHeaders.REFERER) || entry.getKey().equalsIgnoreCase(HttpHeaders.COOKIE) || entry.getKey().equalsIgnoreCase("ua"))) headers.put(UrlUtil.fixHeader(entry.getKey()), entry.getValue().getAsString());
-        return headers.isEmpty() ? parse.getHeader() : headers;
+        if (headers.isEmpty()) return parse.getHeader();
+        return headers;
     }
 
     @Override
     public void onParseSuccess(Map<String, String> headers, String url, String from) {
-        if (!done.compareAndSet(false, true)) return;
         App.post(() -> {
             if (callback != null) callback.onParseSuccess(headers, url, from);
             stop();
@@ -207,7 +210,6 @@ public class ParseJob implements ParseCallback {
 
     @Override
     public void onParseError() {
-        if (!done.compareAndSet(false, true)) return;
         App.post(() -> {
             if (callback != null) callback.onParseError();
             stop();
@@ -215,8 +217,8 @@ public class ParseJob implements ParseCallback {
     }
 
     private void stopWeb() {
-        for (CustomWebView webView : webViews) webView.stop(false);
-        for (CustomWebView webView : webViews) webView.destroy();
+        for (IWebView webView : webViews) webView.stop(false);
+        for (IWebView webView : webViews) webView.destroy();
         if (!webViews.isEmpty()) webViews.clear();
     }
 
@@ -226,7 +228,6 @@ public class ParseJob implements ParseCallback {
         infinite = null;
         executor = null;
         callback = null;
-        done.set(true);
         stopWeb();
     }
 }

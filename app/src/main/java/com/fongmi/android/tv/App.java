@@ -17,55 +17,29 @@ import com.fongmi.hook.Hook;
 import com.github.catvod.Init;
 import com.google.gson.Gson;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
 public class App extends Application implements Application.ActivityLifecycleCallbacks {
 
-    private static volatile App instance;
-
+    private final ExecutorService searchExecutor;
+    private final ExecutorService executor;
     private final Handler handler;
+    private static App instance;
+    private Activity activity;
     private final Gson gson;
     private final long time;
-
-    private Activity activity;
     private Hook hook;
 
     public App() {
         instance = this;
         gson = new Gson();
         time = System.currentTimeMillis();
+        executor = Executors.newFixedThreadPool(5);
+        searchExecutor = Executors.newFixedThreadPool(20);
         handler = HandlerCompat.createAsync(Looper.getMainLooper());
-    }
-
-    public static App get() {
-        return instance;
-    }
-
-    public static Gson gson() {
-        return get().gson;
-    }
-
-    public static long time() {
-        return get().time;
-    }
-
-    public static Activity activity() {
-        return get().activity;
-    }
-
-    public static void post(Runnable runnable) {
-        get().handler.post(runnable);
-    }
-
-    public static void post(Runnable runnable, long delayMillis) {
-        get().handler.removeCallbacks(runnable);
-        if (delayMillis >= 0) get().handler.postDelayed(runnable, delayMillis);
-    }
-
-    public static void removeCallbacks(Runnable runnable) {
-        get().handler.removeCallbacks(runnable);
-    }
-
-    public static void removeCallbacks(Runnable... runnable) {
-        for (Runnable r : runnable) get().handler.removeCallbacks(r);
     }
 
     public void setHook(Hook hook) {
@@ -83,6 +57,45 @@ public class App extends Application implements Application.ActivityLifecycleCal
         super.onCreate();
         Notify.createChannel();
         registerActivityLifecycleCallbacks(this);
+
+        // 预初始化 X5 核心
+        preInitX5Core();
+    }
+
+    private void preInitX5Core() {
+        // 优化：仅在主进程进行预初始化，避免在 :dexopt 等进程中重复执行
+        if (!isMainProcess(this)) {
+            return;
+        }
+
+        // 在应用启动时预检查并安装 X5 核心（如果存在本地文件）
+        com.fongmi.android.tv.utils.X5Initializer.init(this, success -> {
+            if (success) {
+                android.util.Log.d("App", "X5 core pre-initialized successfully on app startup.");
+            } else {
+                android.util.Log.d("App", "X5 core pre-initialization failed or not available.");
+            }
+        });
+    }
+
+    // Helper method to check if the current process is the main application process
+    public static boolean isMainProcess(android.content.Context context) {
+        int pid = android.os.Process.myPid();
+        String packageName = context.getPackageName();
+        android.app.ActivityManager activityManager = (android.app.ActivityManager) context.getSystemService(android.content.Context.ACTIVITY_SERVICE);
+        if (activityManager == null) {
+            return false;
+        }
+        java.util.List<android.app.ActivityManager.RunningAppProcessInfo> runningAppProcesses = activityManager.getRunningAppProcesses();
+        if (runningAppProcesses == null) {
+            return false;
+        }
+        for (android.app.ActivityManager.RunningAppProcessInfo processInfo : runningAppProcesses) {
+            if (processInfo.pid == pid && packageName.equals(processInfo.processName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -123,5 +136,54 @@ public class App extends Application implements Application.ActivityLifecycleCal
 
     @Override
     public void onActivityStopped(@NonNull Activity activity) {
+    }
+
+    public static App get() {
+        return instance;
+    }
+
+    public static Gson gson() {
+        return get().gson;
+    }
+
+    public static long time() {
+        return get().time;
+    }
+
+    public static Activity activity() {
+        return get().activity;
+    }
+
+    public static <T> Future<T> submit(Callable<T> task) {
+        return get().executor.submit(task);
+    }
+
+    public static Future<?> submit(Runnable task) {
+        return get().executor.submit(task);
+    }
+
+    public static Future<?> submitSearch(Runnable task) {
+        return get().searchExecutor.submit(task);
+    }
+
+    public static void execute(Runnable runnable) {
+        get().executor.execute(runnable);
+    }
+
+    public static void post(Runnable runnable) {
+        get().handler.post(runnable);
+    }
+
+    public static void post(Runnable runnable, long delayMillis) {
+        get().handler.removeCallbacks(runnable);
+        if (delayMillis >= 0) get().handler.postDelayed(runnable, delayMillis);
+    }
+
+    public static void removeCallbacks(Runnable runnable) {
+        get().handler.removeCallbacks(runnable);
+    }
+
+    public static void removeCallbacks(Runnable... runnable) {
+        for (Runnable r : runnable) get().handler.removeCallbacks(r);
     }
 }

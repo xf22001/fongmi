@@ -1,10 +1,22 @@
 .idea
-.vscode
 .gradle
-.github
-.settings
-*build
 *.jks
-*.properties
 lib-*.aar
+build/
+/media*
 /Release
+/local.properties
+
+# App libs AAR (generated)
+/app/libs/chaquo-release.aar
+
+# Conda environment
+/miniconda/
+/miniconda.sh
+
+# Standalone AAR build dir intermediates
+/chaquo_build/build/
+/chaquo_build/local.properties
+/chaquo_build/catvod/src/
+/chaquo_build/chaquo/src/
+/chaquo_build/.gradle/

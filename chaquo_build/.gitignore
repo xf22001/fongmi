@@ -1,0 +1,11 @@
+# Gradle 缓存和中间文件
+.gradle/
+build/
+
+# 忽略同步过来的源码和依赖配置，保留 build.gradle 配置文件
+/catvod/src/
+/chaquo/src/
+/chaquo/requirements.txt
+
+# 本地配置
+local.properties

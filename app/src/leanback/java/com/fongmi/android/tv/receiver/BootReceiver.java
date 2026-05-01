@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.net.NetworkRequest;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
 
@@ -19,7 +21,12 @@ public class BootReceiver extends BroadcastReceiver {
     }
 
     private void registerCallback() {
-        ((ConnectivityManager) App.get().getSystemService(Context.CONNECTIVITY_SERVICE)).registerDefaultNetworkCallback(new Callback());
+        ConnectivityManager manager = (ConnectivityManager) App.get().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            manager.registerDefaultNetworkCallback(new Callback());
+        } else {
+            manager.registerNetworkCallback(new NetworkRequest.Builder().addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET).build(), new Callback());
+        }
     }
 
     static class Callback extends ConnectivityManager.NetworkCallback {

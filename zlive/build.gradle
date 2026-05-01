@@ -3,15 +3,17 @@ plugins {
 }
 
 android {
-    namespace = 'com.east.android.zlive'
+    namespace 'com.east.android.zlive'
 
     compileSdk {
-        version = release(37)
+        version = release(36) {
+            it.minorApiLevel = 1
+        }
     }
 
     defaultConfig {
-        minSdk 24
-        targetSdk 37
+        minSdk 23
+        targetSdk 36
         ndk { abiFilters "armeabi-v7a" }
     }
 }
