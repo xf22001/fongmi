@@ -77,9 +77,14 @@ android {
         }
     }
 
-    android.applicationVariants.configureEach { variant ->
-        variant.outputs.configureEach { output ->
-            outputFileName = "${variant.productFlavors[0].name}-${variant.productFlavors[1].name}.apk"
+    androidComponents {
+        onVariants(selector().withBuildType('release')) { variant ->
+            def flavors = variant.productFlavors.collectEntries { [(it.first): it.second] }
+            def mode = flavors['mode'] ?: 'mode'
+            def abi = flavors['abi'] ?: 'abi'
+            variant.outputs.each { output ->
+                output.outputFileName.set("${mode}-${abi}.apk")
+            }
         }
     }
 
