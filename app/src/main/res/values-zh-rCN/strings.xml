@@ -1,4 +1,4 @@
-<resources xmlns:xliff="http://schemas.android.com/apk/res-auto">
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <!-- App -->
     <string name="app_name">影视</string>
@@ -6,17 +6,17 @@
     <!-- Live -->
     <string name="live_pass">密码</string>
     <string name="live_refresh">刷新</string>
-    <string name="live_line">线路 <xliff:g name="name">%s</xliff:g></string>
+    <string name="live_line">线路 <xliff:g name="name">%1$s</xliff:g></string>
 
     <!-- Detail -->
-    <string name="detail_title"><xliff:g name="name">%s</xliff:g>：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_site">站源：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_year">年份：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_area">地区：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_type">类型：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_director">导演：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_actor">演员：<xliff:g name="name">%s</xliff:g></string>
-    <string name="detail_content">简介：<xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_title"><xliff:g name="name">%1$s</xliff:g>：<xliff:g name="name">%1$s</xliff:g></string>
+    <string name="detail_site">站源：<xliff:g name="name">%1$s</xliff:g></string>
+    <string name="detail_year">年份：<xliff:g name="name">%1$s</xliff:g></string>
+    <string name="detail_area">地区：<xliff:g name="name">%1$s</xliff:g></string>
+    <string name="detail_type">类型：<xliff:g name="name">%1$s</xliff:g></string>
+    <string name="detail_director">导演：<xliff:g name="name">%1$s</xliff:g></string>
+    <string name="detail_actor">演员：<xliff:g name="name">%1$s</xliff:g></string>
+    <string name="detail_content">简介：<xliff:g name="name">%1$s</xliff:g></string>
     <string name="detail_desc">简介</string>
 
     <!-- Keep -->
@@ -51,10 +51,10 @@
     <string name="play_track_video">视轨</string>
     <string name="play_forward_hint">已切换正序播放</string>
     <string name="play_backward_hint">已切换倒序播放</string>
-    <string name="play_ready">准备播放：<xliff:g name="name">%s</xliff:g></string>
-    <string name="play_switch_flag">正在切换线路至「<xliff:g name="name">%s</xliff:g>」</string>
-    <string name="play_switch_site">正在切换站源至「<xliff:g name="name">%s</xliff:g>」</string>
-    <string name="play_switch_parse">正在切换解析至「<xliff:g name="name">%s</xliff:g>」</string>
+    <string name="play_ready">准备播放：<xliff:g name="name">%1$s</xliff:g></string>
+    <string name="play_switch_flag">正在切换线路至「<xliff:g name="name">%1$s</xliff:g>」</string>
+    <string name="play_switch_site">正在切换站源至「<xliff:g name="name">%1$s</xliff:g>」</string>
+    <string name="play_switch_parse">正在切换解析至「<xliff:g name="name">%1$s</xliff:g>」</string>
 
     <!-- Danmaku -->
     <string name="danmaku">弹幕</string>
@@ -63,7 +63,7 @@
     <!-- Parse -->
     <string name="parse">解析</string>
     <string name="parse_god">超级解析</string>
-    <string name="parse_from">解析来自：<xliff:g name="name">%s</xliff:g></string>
+    <string name="parse_from">解析来自：<xliff:g name="name">%1$s</xliff:g></string>
 
     <!-- Push -->
     <string name="push">推送</string>
@@ -133,12 +133,12 @@
     <string name="error_play_url">播放地址加载失败</string>
     <string name="error_play_flag">暂无线路数据</string>
     <string name="error_play_timeout">连接超时</string>
-    <string name="error_play_tvbus">错误代码：<xliff:g name="name">%s</xliff:g></string>
+    <string name="error_play_tvbus">错误代码：<xliff:g name="name">%1$s</xliff:g></string>
     <string name="error_detail">暂无播放数据</string>
     <string name="error_empty">这里什麽都没有 👀</string>
 
     <!-- Update -->
-    <string name="update_version">发现新版本 <xliff:g name="name">%s</xliff:g></string>
+    <string name="update_version">发现新版本 <xliff:g name="name">%1$s</xliff:g></string>
     <string name="update_check">正在检测更新…</string>
     <string name="update_confirm">更新</string>
 
