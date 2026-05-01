@@ -15,17 +15,19 @@
 - **强制源码依赖 (Crucial)**: 为了确保所有子模块都能以 API 23 为基准进行编译，在 `app/build.gradle` 中**必须**放弃官方的 `fileTree(dir: "libs", include: ["*.aar"])` 一次性导入方案。
   - **正确做法**：使用 `implementation project(':模块名')` 显式引入除 `chaquo` 以外的所有子模块。
   - **同时配置**：在 `fileTree` 中必须增加 `exclude: ["forcetech-release.aar", "hook-release.aar", "jianpian-release.aar", "thunder-release.aar", "tvbus-release.aar", "zlive-release.aar"]`，以防止主项目错误地加载上游可能预先放置在 `libs` 目录下基于 API 24 编译的旧 AAR 产物。
-- **HTTPS 协议增强**: `gradle.properties` 增加 TLSv1.2/v1.3 支持，确保旧系统安全连接。
+- **HTTPS 协议增强**: `gradle.properties` 增加 TLSv1.2/v1.3 支持，确保旧 system 安全连接。
 - **异步逻辑适配**: `Async.java` 中将 `CompletableFuture` 替换为本地 `SettableFuture`。
 - **UI 降级规避**: 对于低版本缺失的 API，需要加版本判断。例如：`isInPictureInPictureMode()` 需要 `Build.VERSION.SDK_INT >= Build.VERSION_CODES.N` 保护。
 - **资源适配 (Gradle 9+)**:
   - **Positional Format**: 所有的 `strings.xml` 必须使用位置索引格式（如 `%1$s`），严禁使用非位置占位符（如 `%s`），否则会导致 Gradle 9 资源合并失败。
   - **XLIFF Namespace**: 必须使用标准的 `xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2"`。
+- **CI 环境适配**: 在 `app/build.gradle` 中必须对 `local.properties` 进行 `exists()` 判断，以兼容 GitHub Actions 等没有本地属性文件的编译环境。
 
 ### 2. 腾讯 X5 核心 (TBS) 集成与 WebView 架构重构
 解决旧设备系统 WebView 性能差、嗅探失败的问题。
 - **WebView 工厂模式**: 引入 `IWebView` 接口，通过 `WebViewFactory` 动态创建 `SystemWebViewWrapper` (原 `CustomWebView`) 或 `X5WebViewWrapper`。
 - **解析逻辑 (`ParseJob.java`)**: 所有的 WebView 操作必须通过工厂模式进行。
+- **本地 SDK 依赖**: 必须在 `app/libs` 中放置 `tbs_sdk_*.jar`，且 `app/build.gradle` 的 `fileTree` 必须包含 `include: ["*.jar"]` 才能确保 X5 代码编译通过。
 
 ### 3. Chaquopy 编译解耦与环境隔离 (Build System)
 解决不同 Gradle 版本竞争导致的死锁和编译难题。
@@ -33,6 +35,7 @@
 - **两阶段构建 (Workflow Optimization)**: 
   - **步骤 1**: 独立调用 `chaquo_build/gradlew` 编译产出 `chaquo-release.aar`。
   - **步骤 2**: 将 AAR 拷贝至 `app/libs` 后，再执行主项目的纯净构建。
+- **源码同步**: CI 环境下必须在构建 AAR 前手动将主项目的 `catvod` 和 `chaquo` 源码拷贝至 `chaquo_build` 目录，否则独立项目将因缺失源码或 `requirements.txt` 导致编译失败。
 - **禁止嵌套构建**: 严禁在主项目的 `build.gradle` 中通过 `Task` 触发子项目的 Gradle 进程，以防止 Gradle 9 出现文件锁死（86% 卡死问题）。
 
 ## 三、 合并与同步注意事项 (Merging Tips)
@@ -61,3 +64,4 @@ source env.sh
 ### 2. 常见问题
 - **编译卡死在 86%**: 通常是因为同时运行了两个不同版本的 Gradle。请执行 `./gradlew --stop` 并杀掉所有 Java 进程。
 - **R8 编译报错 (IndexOutOfBounds)**: 这是 Gradle 9 的底层 Bug。如果遇到，可临时在 `app/build.gradle` 中将 `minifyEnabled` 设为 `false` 绕过。
+- **配置失败 (No local.properties)**: 确认已按照本指南第一章第 1 节“CI 环境适配”部分修改了 `build.gradle`。
