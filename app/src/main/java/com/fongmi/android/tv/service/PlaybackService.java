@@ -3,6 +3,7 @@ package com.fongmi.android.tv.service;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 
 import androidx.annotation.NonNull;
@@ -202,7 +203,11 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
     }
 
     private void removeForeground() {
-        stopForeground(STOP_FOREGROUND_REMOVE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE);
+        } else {
+            stopForeground(true);
+        }
     }
 
     private void saveProgress() {
