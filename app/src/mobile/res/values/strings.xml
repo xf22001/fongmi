@@ -24,7 +24,7 @@
     <string name="detail_episode">Episode</string>
     <string name="detail_quality">Quality</string>
     <string name="detail_content">Summary</string>
-    <string name="detail_search">Searching <xliff:g name="name">%s</xliff:g></string>
+    <string name="detail_search">Searching <xliff:g name="name">%1$s</xliff:g></string>
 
     <!-- Device -->
     <string name="device_select">Select devices</string>
