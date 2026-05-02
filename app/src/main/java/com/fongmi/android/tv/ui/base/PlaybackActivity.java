@@ -194,9 +194,10 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void closePiP() {
-        if (!isInPictureInPictureMode()) return;
-        detach();
-        finish();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode()) {
+            detach();
+            finish();
+        }
     }
 
     private void attachSurface() {

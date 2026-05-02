@@ -507,7 +507,7 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     private void showControl() {
-        if (service() == null || isInPictureInPictureMode()) return;
+        if (service() == null || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode())) return;
         mBinding.control.info.setVisibility(player().isEmpty() ? View.GONE : View.VISIBLE);
         mBinding.control.cast.setVisibility(player().isEmpty() ? View.GONE : View.VISIBLE);
         mBinding.control.right.rotate.setVisibility(isLock() ? View.GONE : View.VISIBLE);
@@ -526,8 +526,13 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
     }
 
     private void showInfo() {
-        mBinding.widget.infoPip.setVisibility(isInPictureInPictureMode() ? View.VISIBLE : View.GONE);
-        mBinding.widget.info.setVisibility(isInPictureInPictureMode() ? View.GONE : View.VISIBLE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && isInPictureInPictureMode()) {
+            mBinding.widget.infoPip.setVisibility(View.VISIBLE);
+            mBinding.widget.info.setVisibility(View.GONE);
+        } else {
+            mBinding.widget.infoPip.setVisibility(View.GONE);
+            mBinding.widget.info.setVisibility(View.VISIBLE);
+        }
         setR3Callback();
         hideControl();
         setInfo();
@@ -1077,19 +1082,21 @@ public class LiveActivity extends PlaybackActivity implements CustomKeyDown.List
         super.onUserLeaveHint();
         if (isRedirect()) return;
         if (isLock()) App.post(this::onLock, 500);
-        if (player().haveTrack(C.TRACK_TYPE_VIDEO)) mPiP.enter(this, player().getVideoWidth(), player().getVideoHeight(), Setting.getLiveScale());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && player().haveTrack(C.TRACK_TYPE_VIDEO)) mPiP.enter(this, player().getVideoWidth(), player().getVideoHeight(), Setting.getLiveScale());
     }
 
     @Override
     public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode, @NonNull Configuration newConfig) {
-        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
-        if (isInPictureInPictureMode) {
-            hideControl();
-            hideInfo();
-            hideUI();
-        } else {
-            hideInfo();
-            if (isStop()) finish();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+            if (isInPictureInPictureMode) {
+                hideControl();
+                hideInfo();
+                hideUI();
+            } else {
+                hideInfo();
+                if (isStop()) finish();
+            }
         }
     }
 

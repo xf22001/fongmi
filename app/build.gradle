@@ -87,6 +87,7 @@ android {
     }
 
     lint {
+        fatal 'NewApi'
         disable 'UnsafeOptInUsageError'
     }
 
