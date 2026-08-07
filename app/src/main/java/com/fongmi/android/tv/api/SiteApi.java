@@ -12,7 +12,7 @@ import com.fongmi.android.tv.bean.Class;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.bean.Site;
 import com.fongmi.android.tv.bean.Vod;
-import com.fongmi.android.tv.player.Source;
+import com.fongmi.android.tv.player.extractor.Source;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.Sniffer;
 import com.github.catvod.crawler.Spider;
@@ -163,10 +163,12 @@ public class SiteApi {
             if (result.getFlag().isEmpty()) result.setFlag(flag);
             result.setUrl(Source.get().fetch(result));
             result.setHeader(site.getHeader());
+            result.setKey(key);
             return result;
         } else if (site.isEmpty() && "push_agent".equals(key)) {
             Result result = new Result();
             result.setUrl(id);
+            result.setKey(key);
             result.setParse(0);
             result.setFlag(flag);
             result.setUrl(Source.get().fetch(result));
@@ -175,6 +177,7 @@ public class SiteApi {
         } else {
             Result result = new Result();
             result.setUrl(id);
+            result.setKey(key);
             result.setFlag(flag);
             result.setHeader(site.getHeader());
             result.setPlayUrl(site.getPlayUrl());

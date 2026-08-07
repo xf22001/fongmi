@@ -23,6 +23,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.annotations.JsonAdapter;
 import com.google.gson.annotations.SerializedName;
 
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -113,7 +114,7 @@ public class Live {
     private boolean pass;
 
     @Ignore
-    private boolean activated;
+    private boolean selected;
 
     @Ignore
     private int width;
@@ -218,6 +219,14 @@ public class Live {
         return TextUtils.isEmpty(timeZone) ? "" : timeZone;
     }
 
+    public ZoneId getZoneId() {
+        try {
+            return getTimeZone().isEmpty() ? ZoneId.systemDefault() : ZoneId.of(getTimeZone());
+        } catch (Exception ignored) {
+            return ZoneId.systemDefault();
+        }
+    }
+
     public String getKeep() {
         return TextUtils.isEmpty(keep) ? "" : keep;
     }
@@ -262,16 +271,16 @@ public class Live {
         this.pass = pass;
     }
 
-    public boolean isActivated() {
-        return activated;
+    public boolean isSelected() {
+        return selected;
     }
 
-    public void setActivated(boolean activated) {
-        this.activated = activated;
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
-    public void setActivated(Live item) {
-        this.activated = item.equals(this);
+    public void setSelected(Live item) {
+        this.selected = item.equals(this);
     }
 
     public int getWidth() {

@@ -1,5 +1,5 @@
 plugins {
-    id 'com.android.library'
+    alias libs.plugins.android.library
 }
 
 android {
@@ -19,5 +19,5 @@ android {
 }
 
 dependencies {
-    api 'net.java.dev.jna:jna:5.2.0'
+    api libs.jna
 }

@@ -6,10 +6,10 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Parse;
 import com.fongmi.android.tv.databinding.AdapterParseBinding;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class ParseAdapter extends RecyclerView.Adapter<ParseAdapter.ViewHolder> {
@@ -19,30 +19,11 @@ public class ParseAdapter extends RecyclerView.Adapter<ParseAdapter.ViewHolder> 
 
     public ParseAdapter(OnClickListener listener) {
         mListener = listener;
-        mItems = new ArrayList<>();
-    }
-
-    public void addAll(List<Parse> items) {
-        mItems.clear();
-        mItems.addAll(items);
-        notifyDataSetChanged();
-    }
-
-    public void clear() {
-        mItems.clear();
-        notifyDataSetChanged();
-    }
-
-    public Parse get(int position) {
-        return mItems.get(position);
-    }
-
-    public Parse first() {
-        return mItems.get(0);
+        mItems = VodConfig.get().getParses();
     }
 
     public int getPosition() {
-        for (int i = 0; i < mItems.size(); i++) if (mItems.get(i).isActivated()) return i;
+        for (int i = 0; i < mItems.size(); i++) if (mItems.get(i).isSelected()) return i;
         return 0;
     }
 
@@ -61,7 +42,7 @@ public class ParseAdapter extends RecyclerView.Adapter<ParseAdapter.ViewHolder> 
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Parse item = mItems.get(position);
         holder.binding.text.setText(item.getName());
-        holder.binding.text.setActivated(item.isActivated());
+        holder.binding.text.setSelected(item.isSelected());
         holder.binding.getRoot().setOnClickListener(v -> mListener.onItemClick(item));
     }
 

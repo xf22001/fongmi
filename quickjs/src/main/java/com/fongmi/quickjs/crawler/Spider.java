@@ -38,6 +38,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
     private QuickJSContext ctx;
     private JSObject jsObject;
     private final String api;
+    private Global global;
     private boolean cat;
 
     public Spider(String api, DexClassLoader dex) {
@@ -140,8 +141,9 @@ public class Spider extends com.github.catvod.crawler.Spider {
 
     private void releaseJS() throws Exception {
         submit(() -> {
-            jsObject.release();
-            ctx.destroy();
+            if (global != null) global.destroy();
+            if (jsObject != null) jsObject.release();
+            if (ctx != null) ctx.destroy();
             return null;
         }).get();
     }
@@ -175,7 +177,7 @@ public class Spider extends com.github.catvod.crawler.Spider {
 
     private void createFun() {
         try {
-            Global.create(ctx, executor);
+            global = Global.create(ctx, executor);
             Class<?> clz = dex.loadClass("com.github.catvod.js.Function");
             clz.getDeclaredConstructor(QuickJSContext.class).newInstance(ctx);
         } catch (Throwable ignored) {

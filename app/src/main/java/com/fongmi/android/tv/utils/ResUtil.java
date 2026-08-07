@@ -1,7 +1,6 @@
 package com.fongmi.android.tv.utils;
 
 import android.content.Context;
-import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
 import android.graphics.Paint;
@@ -12,7 +11,6 @@ import android.util.DisplayMetrics;
 import android.util.TypedValue;
 import android.view.Display;
 import android.view.MotionEvent;
-import android.view.Surface;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
@@ -72,14 +70,6 @@ public class ResUtil {
         }
     }
 
-    public static int getScreenOrientation(Context context) {
-        int orientation = context.getResources().getConfiguration().orientation;
-        int rotation = ((WindowManager) context.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay().getRotation();
-        if (orientation == Configuration.ORIENTATION_PORTRAIT) return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-        if (orientation == Configuration.ORIENTATION_LANDSCAPE) return rotation == Surface.ROTATION_90 ? ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE : ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-        return ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
-    }
-
     public static boolean isEdge(Context context, MotionEvent e, int edge) {
         return e.getRawX() < edge || e.getRawX() > getScreenWidth(context) - edge || e.getRawY() < edge || e.getRawY() > getScreenHeight(context) - edge;
     }
@@ -89,7 +79,11 @@ public class ResUtil {
     }
 
     public static boolean isPad() {
-        return App.get().getResources().getConfiguration().smallestScreenWidthDp >= 600;
+        return isPad(App.get());
+    }
+
+    public static boolean isPad(Context context) {
+        return context.getResources().getConfiguration().smallestScreenWidthDp >= 600;
     }
 
     public static int sp2px(int sp) {

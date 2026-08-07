@@ -146,7 +146,9 @@ public class VodConfig extends BaseConfig {
         initSite(config, object);
         initParse(config, object);
         config.setLogo(Json.safeString(object, "logo"));
+        config.setAssrt(Json.safeString(object, "assrt"));
         config.setNotice(Json.safeString(object, "notice"));
+        config.setDanmaku(Json.safeString(object, "danmaku"));
     }
 
     private void initList(JsonObject object) {
@@ -284,18 +286,18 @@ public class VodConfig extends BaseConfig {
 
     private void setParse(Config config, Parse parse, boolean save) {
         this.parse = parse;
-        this.parse.setActivated(true);
+        this.parse.setSelected(true);
         config.setParse(parse.getName());
-        getParses().forEach(item -> item.setActivated(parse));
+        getParses().forEach(item -> item.setSelected(parse));
         if (save) config.save();
     }
 
     private void setHome(Config config, Site site, boolean save) {
         home = site;
-        home.setActivated(true);
+        home.setSelected(true);
         config.setHome(home.getKey());
         if (save) config.save();
-        getSites().forEach(item -> item.setActivated(home));
+        getSites().forEach(item -> item.setSelected(home));
     }
 
     private static class Loader {

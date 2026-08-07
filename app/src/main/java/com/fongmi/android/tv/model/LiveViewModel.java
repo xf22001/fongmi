@@ -3,53 +3,54 @@ package com.fongmi.android.tv.model;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
+import androidx.media3.common.C;
 
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.api.LiveApi;
 import com.fongmi.android.tv.bean.Channel;
 import com.fongmi.android.tv.bean.Epg;
-import com.fongmi.android.tv.bean.EpgData;
 import com.fongmi.android.tv.bean.Live;
 import com.fongmi.android.tv.bean.Result;
 import com.fongmi.android.tv.exception.ExtractException;
-import com.fongmi.android.tv.utils.Task;
-import com.google.common.util.concurrent.FluentFuture;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.fongmi.android.tv.playback.PlaybackResult;
+import com.fongmi.android.tv.playback.live.LivePlayRequest;
+import com.fongmi.android.tv.playback.live.LivePlaybackController;
+import com.fongmi.android.tv.playback.live.LivePlaybackHost;
+import com.fongmi.android.tv.playback.live.LivePlaybackState;
 
 import java.time.ZoneId;
-import java.util.EnumMap;
-import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public class LiveViewModel extends ViewModel {
 
+    private final MutableLiveData<PlaybackResult<LivePlayRequest>> playback;
+    private final MutableLiveData<String> error;
     private final MutableLiveData<Boolean> xml;
-    private final MutableLiveData<Result> url;
     private final MutableLiveData<Live> live;
     private final MutableLiveData<Epg> epg;
 
-    private final Map<TaskType, ListenableFuture<?>> futures;
-    private final Map<TaskType, AtomicInteger> taskIds;
+    private final ViewModelTaskRunner<TaskType> tasks;
+    private final LivePlaybackState playbackState;
     private volatile ZoneId zoneId;
 
     public LiveViewModel() {
         this.epg = new MutableLiveData<>();
         this.xml = new MutableLiveData<>();
-        this.url = new MutableLiveData<>();
         this.live = new MutableLiveData<>();
+        this.error = new MutableLiveData<>();
+        this.playback = new MutableLiveData<>();
+        this.playbackState = new LivePlaybackState();
+        this.tasks = new ViewModelTaskRunner<>(TaskType.class);
         this.zoneId = ZoneId.systemDefault();
-        this.futures = new EnumMap<>(TaskType.class);
-        this.taskIds = new EnumMap<>(TaskType.class);
-        for (TaskType type : TaskType.values()) taskIds.put(type, new AtomicInteger(0));
     }
 
-    public LiveData<Result> url() {
-        return url;
+    public LiveData<PlaybackResult<LivePlayRequest>> playback() {
+        return playback;
+    }
+
+    public LiveData<String> error() {
+        return error;
     }
 
     public LiveData<Boolean> xml() {
@@ -68,15 +69,19 @@ public class LiveViewModel extends ViewModel {
         return zoneId;
     }
 
+    public LivePlaybackController createPlaybackController(LivePlaybackHost host) {
+        return new LivePlaybackController(host, playbackState);
+    }
+
     public void parse(Live item) {
+        error.setValue(null);
         execute(TaskType.LIVE, () -> {
             LiveApi.parse(item);
-            setTimeZone(item);
             return item;
-        }, live::postValue, error -> {
-            if (error instanceof ExtractException) url.postValue(Result.error(error.getMessage()));
-            else live.postValue(new Live());
-        });
+        }, result -> {
+            setTimeZone(result);
+            live.postValue(result);
+        }, this::handleParseError);
     }
 
     public void parseXml(Live item) {
@@ -87,49 +92,41 @@ public class LiveViewModel extends ViewModel {
         execute(TaskType.EPG, () -> LiveApi.getEpg(item, zoneId), epg::postValue, error -> epg.postValue(new Epg()));
     }
 
-    public void getUrl(Channel item) {
-        execute(TaskType.URL, () -> LiveApi.getUrl(item), url::postValue, this::handleUrlError);
+    public void getUrl(LivePlayRequest request) {
+        execute(TaskType.URL, () -> getUrlResult(request), result -> postUrl(request, result), error -> handleUrlError(request, error));
     }
 
-    public void getUrl(Channel item, EpgData data) {
-        execute(TaskType.URL, () -> LiveApi.getUrl(item, data), url::postValue, this::handleUrlError);
+    private Result getUrlResult(LivePlayRequest request) throws Exception {
+        return request.isCatchup() ? LiveApi.getUrl(request.getChannel(), request.getCatchupData()) : LiveApi.getUrl(request.getChannel());
     }
 
-    private void handleUrlError(Throwable t) {
-        if (t instanceof ExtractException) url.postValue(Result.error(t.getMessage()));
-        else url.postValue(new Result());
+    private void postUrl(LivePlayRequest request, Result result) {
+        if (request.getPosition() != C.TIME_UNSET) result.setPosition(request.getPosition());
+        playback.postValue(new PlaybackResult<>(request, result));
+    }
+
+    private void handleParseError(Throwable t) {
+        if (t instanceof ExtractException) error.postValue(t.getMessage());
+        else live.postValue(new Live());
+    }
+
+    private void handleUrlError(LivePlayRequest request, Throwable t) {
+        if (t instanceof ExtractException) postUrl(request, Result.error(t.getMessage()));
+        else postUrl(request, new Result());
     }
 
     private void setTimeZone(Live live) {
-        try {
-            this.zoneId = live.getTimeZone().isEmpty() ? ZoneId.systemDefault() : ZoneId.of(live.getTimeZone());
-        } catch (Exception ignored) {
-        }
+        this.zoneId = live.getZoneId();
     }
 
     private <T> void execute(TaskType type, Callable<T> callable, Consumer<T> onSuccess, Consumer<Throwable> onError) {
-        AtomicInteger taskId = taskIds.get(type);
-        int currentId = taskId.incrementAndGet();
-        ListenableFuture<?> old = futures.get(type);
-        if (old != null) old.cancel(true);
-        FluentFuture<T> future = FluentFuture.from(Task.executor().submit(callable)).withTimeout(type.timeout, TimeUnit.MILLISECONDS, Task.scheduler());
-        futures.put(type, future);
-        future.addCallback(Task.callback(
-                result -> {
-                    if (taskId.get() == currentId) onSuccess.accept(result);
-                },
-                error -> {
-                    if (error instanceof CancellationException) return;
-                    if (taskId.get() != currentId) return;
-                    onError.accept(error);
-                }
-        ), MoreExecutors.directExecutor());
+        tasks.execute(type, type.timeout, callable, onSuccess, onError);
     }
 
     @Override
     protected void onCleared() {
-        super.onCleared();
-        futures.values().forEach(future -> future.cancel(true));
+        tasks.cancelAll();
+        playbackState.reset();
     }
 
     private enum TaskType {

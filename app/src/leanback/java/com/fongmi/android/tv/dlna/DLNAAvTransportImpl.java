@@ -29,6 +29,7 @@ import org.jupnp.support.model.TransportSettings;
 import org.jupnp.support.model.TransportState;
 import org.jupnp.support.model.TransportStatus;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -106,7 +107,7 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
     private Map<String, String> parseHeaders(String metaData) {
         try {
             DIDLContent content = new DIDLParser().parse(metaData);
-            return content.getItems().stream().flatMap(item -> item.getProperties().stream()).filter(p -> p instanceof DIDLObject.Property.DC.DESCRIPTION).findFirst().map(p -> App.gson().<Map<String, String>>fromJson(p.getValue().toString(), new TypeToken<Map<String, String>>() {}.getType())).orElse(new HashMap<>());
+            return content.getItems().stream().flatMap(item -> item.getProperties().stream()).filter(p -> p instanceof DIDLObject.Property.DC.DESCRIPTION).findFirst().map(p -> App.gson().<Map<String, String>>fromJson(p.getValue().toString(), TypeToken.getParameterized(Map.class, String.class, String.class).getType())).orElse(new HashMap<>());
         } catch (Exception ignored) {
             return new HashMap<>();
         }
@@ -199,7 +200,7 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
 
     @Override
     public void next(UnsignedIntegerFourBytes instanceId) {
-        if (!dlnaActive) return;
+        if (!canNext()) return;
         CastAction action = popNext();
         if (action != null) startCastActivity(action);
     }
@@ -228,16 +229,27 @@ public class DLNAAvTransportImpl extends AbstractAVTransportService {
     @Override
     protected TransportAction[] getCurrentTransportActions(UnsignedIntegerFourBytes instanceId) {
         return switch (currentState) {
-            case PLAYING -> new TransportAction[]{TransportAction.Pause, TransportAction.Stop, TransportAction.Seek};
-            case PAUSED_PLAYBACK -> new TransportAction[]{TransportAction.Play, TransportAction.Stop, TransportAction.Seek};
-            default -> new TransportAction[]{TransportAction.Play};
+            case PLAYING -> withNext(TransportAction.Pause, TransportAction.Stop, TransportAction.Seek);
+            case PAUSED_PLAYBACK -> withNext(TransportAction.Play, TransportAction.Stop, TransportAction.Seek);
+            default -> withNext(TransportAction.Play);
         };
+    }
+
+    private boolean canNext() {
+        return dlnaActive && !currentURI.isEmpty() && hasNext();
+    }
+
+    private TransportAction[] withNext(TransportAction... actions) {
+        if (!canNext()) return actions;
+        TransportAction[] result = Arrays.copyOf(actions, actions.length + 1);
+        result[actions.length] = TransportAction.Next;
+        return result;
     }
 
     private void startCastActivity(CastAction action) {
         Intent intent = new Intent(context, CastActivity.class);
         intent.putExtra(CastAction.KEY_EXTRA, action);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         context.startActivity(intent);
     }
 
