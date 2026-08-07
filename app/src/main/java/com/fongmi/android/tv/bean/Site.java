@@ -91,6 +91,10 @@ public class Site implements Parcelable {
     private Integer quickSearch;
 
     @Ignore
+    @SerializedName("danmaku")
+    private Integer danmaku;
+
+    @Ignore
     @SerializedName("categories")
     private List<String> categories;
 
@@ -104,7 +108,7 @@ public class Site implements Parcelable {
     private Style style;
 
     @Ignore
-    private boolean activated;
+    private boolean selected;
 
     public Site() {
     }
@@ -124,7 +128,7 @@ public class Site implements Parcelable {
         this.changeable = (Integer) in.readValue(Integer.class.getClassLoader());
         this.categories = in.createStringArrayList();
         this.style = in.readParcelable(Style.class.getClassLoader());
-        this.activated = in.readByte() != 0;
+        this.selected = in.readByte() != 0;
     }
 
     public static Site objectFrom(JsonElement element, String spider) {
@@ -226,6 +230,10 @@ public class Site implements Parcelable {
         return quickSearch == null ? 1 : quickSearch;
     }
 
+    public Integer getDanmaku() {
+        return danmaku == null ? 1 : danmaku;
+    }
+
     public List<String> getCategories() {
         return categories == null ? Collections.emptyList() : categories;
     }
@@ -246,16 +254,16 @@ public class Site implements Parcelable {
         return getStyle() != null ? getStyle() : style != null ? style : Style.rect();
     }
 
-    public boolean isActivated() {
-        return activated;
+    public boolean isSelected() {
+        return selected;
     }
 
-    public void setActivated(boolean activated) {
-        this.activated = activated;
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
-    public void setActivated(Site item) {
-        this.activated = item.equals(this);
+    public void setSelected(Site item) {
+        this.selected = item.equals(this);
     }
 
     public boolean isHide() {
@@ -367,7 +375,7 @@ public class Site implements Parcelable {
         dest.writeValue(this.changeable);
         dest.writeStringList(this.categories);
         dest.writeParcelable(this.style, flags);
-        dest.writeByte(this.activated ? (byte) 1 : (byte) 0);
+        dest.writeByte(this.selected ? (byte) 1 : (byte) 0);
     }
 
     public static final Creator<Site> CREATOR = new Creator<>() {

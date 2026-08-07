@@ -7,13 +7,13 @@ import android.text.TextUtils;
 import androidx.annotation.NonNull;
 
 import com.fongmi.android.tv.App;
-import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.gson.DanmakuAdapter;
 import com.fongmi.android.tv.gson.FilterAdapter;
 import com.fongmi.android.tv.gson.HeaderAdapter;
 import com.fongmi.android.tv.gson.MsgAdapter;
 import com.fongmi.android.tv.gson.UrlAdapter;
+import com.fongmi.android.tv.setting.DanmakuSetting;
 import com.fongmi.android.tv.utils.Util;
 import com.github.catvod.utils.Trans;
 import com.google.gson.annotations.JsonAdapter;
@@ -211,6 +211,10 @@ public class Result implements Parcelable {
         return subs == null ? new ArrayList<>() : new ArrayList<>(subs);
     }
 
+    public void setSubs(List<Sub> subs) {
+        if (getSubs().isEmpty()) this.subs = subs;
+    }
+
     public Map<String, String> getHeader() {
         return header == null ? new HashMap<>() : header;
     }
@@ -248,7 +252,8 @@ public class Result implements Parcelable {
     }
 
     public List<Danmaku> getDanmaku() {
-        return !Setting.isDanmakuLoad() || danmaku == null ? new ArrayList<>() : danmaku;
+        if (!DanmakuSetting.isLoad()) return new ArrayList<>();
+        return danmaku = danmaku == null ? new ArrayList<>() : danmaku;
     }
 
     public String getFormat() {
@@ -277,6 +282,10 @@ public class Result implements Parcelable {
 
     public Long getPosition() {
         return position;
+    }
+
+    public void setPosition(Long position) {
+        this.position = position;
     }
 
     public Integer getPageCount() {
@@ -323,7 +332,7 @@ public class Result implements Parcelable {
         return !getDesc().isEmpty();
     }
 
-    public boolean shouldUseParse() {
+    public boolean isUseParse() {
         if (!VodConfig.hasParse()) return false;
         return (getPlayUrl().isEmpty() && VodConfig.get().getFlags().contains(getFlag())) || getJx() == 1;
     }

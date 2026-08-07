@@ -17,6 +17,7 @@ import androidx.media3.common.Format;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.Tracks;
 import androidx.media3.ui.DefaultTrackNameProvider;
+import androidx.media3.ui.SubtitleView;
 import androidx.media3.ui.TrackNameProvider;
 import androidx.viewbinding.ViewBinding;
 
@@ -25,38 +26,42 @@ import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.bean.Track;
 import com.fongmi.android.tv.databinding.DialogTrackBinding;
-import com.fongmi.android.tv.player.PlayerHelper;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.player.track.TrackUtil;
 import com.fongmi.android.tv.ui.adapter.TrackAdapter;
 import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.utils.FileChooser;
 import com.fongmi.android.tv.utils.ResUtil;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClickListener {
+public final class TrackDialog extends BaseBottomSheetDialog implements TrackAdapter.OnClickListener {
 
     private final TrackNameProvider provider;
     private final TrackAdapter adapter;
     private DialogTrackBinding binding;
+    private SubtitleView subtitleView;
     private PlayerManager player;
-    private Listener listener;
     private int type;
-
-    public static TrackDialog create() {
-        return new TrackDialog();
-    }
 
     public TrackDialog() {
         this.adapter = new TrackAdapter(this);
         this.provider = new DefaultTrackNameProvider(App.get().getResources());
     }
 
+    public static TrackDialog create() {
+        return new TrackDialog();
+    }
+
     public TrackDialog player(PlayerManager player) {
         this.player = player;
+        return this;
+    }
+
+    public TrackDialog view(SubtitleView subtitleView) {
+        this.subtitleView = subtitleView;
         return this;
     }
 
@@ -66,9 +71,20 @@ public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClic
     }
 
     public void show(FragmentActivity activity) {
-        for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof BottomSheetDialogFragment) return;
+        for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof TrackDialog) return;
         show(activity.getSupportFragmentManager(), null);
-        this.listener = (Listener) activity;
+    }
+
+    private boolean hasChoose() {
+        return type == C.TRACK_TYPE_TEXT && player.isVod();
+    }
+
+    private boolean hasSearch() {
+        return type == C.TRACK_TYPE_TEXT && player.isVod();
+    }
+
+    private boolean hasSetting() {
+        return type == C.TRACK_TYPE_AUDIO || type == C.TRACK_TYPE_VIDEO || type == C.TRACK_TYPE_TEXT;
     }
 
     @Override
@@ -78,31 +94,52 @@ public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClic
 
     @Override
     protected void initView() {
+        setRecyclerView();
+        binding.search.setVisibility(hasSearch() ? View.VISIBLE : View.GONE);
+        binding.choose.setVisibility(hasChoose() ? View.VISIBLE : View.GONE);
+        binding.setting.setVisibility(hasSetting() ? View.VISIBLE : View.GONE);
+        binding.title.setText(ResUtil.getStringArray(R.array.select_track)[type - 1]);
+    }
+
+    @Override
+    protected void initEvent() {
+        binding.search.setOnClickListener(this::onSearch);
+        binding.choose.setOnClickListener(this::onChoose);
+        binding.setting.setOnClickListener(this::onSetting);
+    }
+
+    private void setRecyclerView() {
         binding.recycler.setItemAnimator(null);
         binding.recycler.setHasFixedSize(true);
         binding.recycler.setAdapter(adapter.addAll(getTrack()));
         binding.recycler.addItemDecoration(new SpaceItemDecoration(1, 16));
         binding.recycler.post(() -> binding.recycler.scrollToPosition(adapter.getSelected()));
         binding.recycler.setVisibility(adapter.getItemCount() == 0 ? View.GONE : View.VISIBLE);
-        binding.choose.setVisibility(type == C.TRACK_TYPE_TEXT && player.isVod() ? View.VISIBLE : View.GONE);
-        binding.subtitle.setVisibility(type == C.TRACK_TYPE_TEXT && player.haveTrack(C.TRACK_TYPE_TEXT) ? View.VISIBLE : View.GONE);
-        binding.title.setText(ResUtil.getStringArray(R.array.select_track)[type - 1]);
     }
 
-    @Override
-    protected void initEvent() {
-        binding.choose.setOnClickListener(this::showChooser);
-        binding.subtitle.setOnClickListener(this::onSubtitle);
+    private void onSearch(View view) {
+        FragmentActivity activity = requireActivity();
+        dismissNow();
+        SubtitleSearchDialog.create().player(player).show(activity);
     }
 
-    private void onSubtitle(View view) {
-        App.post(() -> listener.onSubtitleClick(), 100);
-        dismiss();
-    }
-
-    private void showChooser(View view) {
+    private void onChoose(View view) {
         FileChooser.from(launcher).show(new String[]{MimeTypes.APPLICATION_SUBRIP, MimeTypes.TEXT_SSA, MimeTypes.TEXT_VTT, MimeTypes.APPLICATION_TTML, "audio/*", "text/*", "application/octet-stream"});
         player.pause();
+    }
+
+    private void onSetting(View view) {
+        FragmentActivity activity = requireActivity();
+        dismissNow();
+        showSetting(activity);
+    }
+
+    private void showSetting(FragmentActivity activity) {
+        switch (type) {
+            case C.TRACK_TYPE_AUDIO -> AudioSettingDialog.create().player(player).show(activity);
+            case C.TRACK_TYPE_VIDEO -> VideoSettingDialog.create().player(player).show(activity);
+            case C.TRACK_TYPE_TEXT -> SubtitleSettingDialog.create().view(subtitleView).player(player).show(activity);
+        }
     }
 
     private List<Track> getTrack() {
@@ -119,7 +156,7 @@ public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClic
             for (int j = 0; j < trackGroup.length; j++) {
                 Format format = trackGroup.getTrackFormat(j);
                 String name = provider.getTrackName(format);
-                Track item = new Track(type, name, PlayerHelper.describeFormat(format));
+                Track item = new Track(type, name, TrackUtil.describeFormat(format));
                 item.setSelected(trackGroup.isTrackSelected(j));
                 items.add(item);
             }
@@ -137,9 +174,4 @@ public final class TrackDialog extends BaseDialog implements TrackAdapter.OnClic
         player.setSub(Sub.from(FileChooser.getPathFromUri(result.getData().getData())));
         dismiss();
     });
-
-    public interface Listener {
-
-        void onSubtitleClick();
-    }
 }

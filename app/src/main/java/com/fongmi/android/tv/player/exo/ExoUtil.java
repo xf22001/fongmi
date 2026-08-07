@@ -1,57 +1,45 @@
 package com.fongmi.android.tv.player.exo;
 
 import android.content.Context;
-import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
-import android.view.accessibility.CaptioningManager;
 
+import androidx.annotation.NonNull;
 import androidx.media3.common.AudioAttributes;
-import androidx.media3.common.C;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MimeTypes;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.audio.AudioProcessor;
 import androidx.media3.exoplayer.DefaultLoadControl;
 import androidx.media3.exoplayer.DefaultRenderersFactory;
 import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.LoadControl;
 import androidx.media3.exoplayer.RenderersFactory;
-import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.analytics.PlayerId;
+import androidx.media3.exoplayer.audio.AudioSink;
+import androidx.media3.exoplayer.audio.AudioTrackAudioOutputProvider;
+import androidx.media3.exoplayer.audio.DefaultAudioSink;
+import androidx.media3.exoplayer.source.preload.DefaultPreloadManager;
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
-import androidx.media3.exoplayer.trackselection.TrackSelector;
 import androidx.media3.exoplayer.util.EventLogger;
-import androidx.media3.ui.CaptionStyleCompat;
-import androidx.media3.ui.PlayerView;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.BuildConfig;
-import com.fongmi.android.tv.Setting;
-import com.fongmi.android.tv.bean.Drm;
-import com.fongmi.android.tv.bean.Sub;
-import com.fongmi.android.tv.player.PlayerHelper;
-import com.fongmi.android.tv.player.engine.PlaySpec;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
-import com.fongmi.android.tv.utils.UrlUtil;
+import com.fongmi.android.tv.player.track.LangUtil;
+import com.fongmi.android.tv.setting.DecodeSetting;
+import com.fongmi.android.tv.setting.PlayerSetting;
+import com.fongmi.android.tv.setting.SpeedSetting;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class ExoUtil {
 
-    public static void setPlayerView(PlayerView view) {
-        view.getSubtitleView().setStyle(getCaptionStyle());
-        view.getSubtitleView().setApplyEmbeddedStyles(true);
-        view.getSubtitleView().setApplyEmbeddedFontSizes(false);
-        if (Setting.getSubtitleTextSize() != 0) view.getSubtitleView().setFractionalTextSize(Setting.getSubtitleTextSize());
-    }
-
-    public static ExoPlayer buildPlayer(int decode, Player.Listener listener) {
-        ExoPlayer player = new ExoPlayer.Builder(App.get()).setLoadControl(buildLoadControl()).setTrackSelector(buildTrackSelector()).setRenderersFactory(buildRenderersFactory(getRenderMode(decode))).setMediaSourceFactory(buildMediaSourceFactory()).build();
+    public static ExoPlayer buildPlayer(Player.Listener listener, DefaultPreloadManager.Builder preloadManagerBuilder) {
+        ExoPlayer.Builder playerBuilder = new ExoPlayer.Builder(App.get()).setSkipSilenceEnabled(SpeedSetting.isSkipSilence());
+        ExoPlayer player = preloadManagerBuilder.buildExoPlayer(playerBuilder);
         if (BuildConfig.DEBUG) player.addAnalyticsListener(new EventLogger());
         player.setAudioAttributes(AudioAttributes.DEFAULT, true);
         player.setHandleAudioBecomingNoisy(true);
@@ -60,21 +48,14 @@ public class ExoUtil {
         return player;
     }
 
-    public static MediaItem getMediaItem(PlaySpec spec, int decode) {
-        MediaItem.Builder builder = new MediaItem.Builder().setUri(spec.getUri());
-        builder.setSubtitleConfigurations(buildSubtitleConfigs(spec.getSubs()));
-        builder.setDrmConfiguration(buildDrmConfig(spec.getDrm()));
-        builder.setRequestMetadata(buildRequestMetadata(spec));
-        builder.setMediaMetadata(spec.getMetadata());
-        builder.setMimeType(spec.getFormat());
-        builder.setImageDurationMs(15000);
-        builder.setMediaId(spec.getKey());
-        return builder.build();
-    }
-
     public static String getMimeType(int errorCode) {
         if (errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED || errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED || errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED) return MimeTypes.APPLICATION_M3U8;
         return null;
+    }
+
+    static LoadControl buildLoadControl(int maxPreloadBufferBytes) {
+        int buffer = PlayerSetting.getBuffer();
+        return new DefaultLoadControl.Builder().setBufferDurationsMs(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS * buffer, DefaultLoadControl.DEFAULT_MAX_BUFFER_MS * buffer, DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS, DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS).setPlayerTargetBufferBytes(PlayerId.PRELOAD.name, maxPreloadBufferBytes).build();
     }
 
     public static Map<String, String> extractHeaders(MediaItem item) {
@@ -83,52 +64,49 @@ public class ExoUtil {
         return extras.keySet().stream().filter(key -> extras.getString(key) != null).collect(Collectors.toMap(key -> key, extras::getString));
     }
 
-    private static int getRenderMode(int decode) {
-        return decode == PlayerEngine.HARD ? DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON : DefaultRenderersFactory.EXTENSION_RENDERER_MODE_PREFER;
-    }
-
-    private static CaptionStyleCompat getCaptionStyle() {
-        return Setting.isCaption() ? CaptionStyleCompat.createFromCaptionStyle(((CaptioningManager) App.get().getSystemService(Context.CAPTIONING_SERVICE)).getUserStyle()) : new CaptionStyleCompat(Color.WHITE, Color.TRANSPARENT, Color.TRANSPARENT, CaptionStyleCompat.EDGE_TYPE_OUTLINE, Color.BLACK, null);
-    }
-
-    private static LoadControl buildLoadControl() {
-        return new DefaultLoadControl.Builder().setBufferDurationsMs(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS * Setting.getBuffer(), DefaultLoadControl.DEFAULT_MAX_BUFFER_MS * Setting.getBuffer(), DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS, DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS).build();
-    }
-
-    private static TrackSelector buildTrackSelector() {
+    static DefaultTrackSelector buildTrackSelector(int decode) {
         DefaultTrackSelector trackSelector = new DefaultTrackSelector(App.get());
         DefaultTrackSelector.Parameters.Builder builder = trackSelector.buildUponParameters();
-        if (Setting.isPreferAAC()) builder.setPreferredAudioMimeType(MimeTypes.AUDIO_AAC);
-        builder.setPreferredTextLanguage(Locale.getDefault().getISO3Language());
-        builder.setTunnelingEnabled(Setting.isTunnel());
+        if (DecodeSetting.isPreferAAC()) builder.setPreferredAudioMimeType(MimeTypes.AUDIO_AAC);
+        builder.setPreferredTextLanguages(LangUtil.getPreferredTextLanguages());
+        builder.setTunnelingEnabled(DecodeSetting.isTunnelingEnabled());
         builder.setForceHighestSupportedBitrate(true);
         trackSelector.setParameters(builder.build());
+        setDecodePreferences(trackSelector, decode);
         return trackSelector;
     }
 
-    private static RenderersFactory buildRenderersFactory(int renderMode) {
-        return new DefaultRenderersFactory(App.get()).setEnableDecoderFallback(true).setExtensionRendererMode(renderMode);
+    static void setDecodePreferences(DefaultTrackSelector trackSelector, int decode) {
+        // DecodeTrackSelector is a closed-source API. Standard DefaultTrackSelector does not support renderer decode preferences,
+        // so this is a safe no-op on the open-source media3 build.
     }
 
-    private static MediaSource.Factory buildMediaSourceFactory() {
-        return new MediaSourceFactory();
+    private static boolean isAudioSoftwareDecode(int decode) {
+        return decode == PlayerEngine.SOFT && DecodeSetting.isAudioPrefer();
     }
 
-    private static MediaItem.RequestMetadata buildRequestMetadata(PlaySpec spec) {
-        return new MediaItem.RequestMetadata.Builder().setMediaUri(spec.getUri()).setExtras(PlayerHelper.toBundle(spec.getHeaders())).build();
+    private static boolean isVideoSoftwareDecode(int decode) {
+        return decode == PlayerEngine.SOFT && DecodeSetting.isVideoPrefer();
     }
 
-    private static List<MediaItem.SubtitleConfiguration> buildSubtitleConfigs(List<Sub> subs) {
-        List<MediaItem.SubtitleConfiguration> configs = new ArrayList<>();
-        if (subs != null) for (Sub sub : subs) configs.add(buildSubConfig(sub));
-        return configs;
+    static RenderersFactory buildRenderersFactory() {
+        return buildRenderersFactory(null);
     }
 
-    private static MediaItem.SubtitleConfiguration buildSubConfig(Sub sub) {
-        return new MediaItem.SubtitleConfiguration.Builder(Uri.parse(UrlUtil.convert(sub.getUrl()))).setLabel(sub.getName()).setMimeType(sub.getFormat()).setSelectionFlags(sub.getFlag()).setLanguage(sub.getLang()).build();
+    static RenderersFactory buildRenderersFactory(AudioProcessor audioProcessor) {
+        DefaultRenderersFactory factory = new DefaultRenderersFactory(App.get()) {
+            @Override
+            protected AudioSink buildAudioSink(@NonNull Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams) {
+                return ExoUtil.buildAudioSink(context, enableFloatOutput, enableAudioOutputPlaybackParams, audioProcessor);
+            }
+        };
+        return factory.setEnableDecoderFallback(true).setDolbyVisionOutputPolicy(DecodeSetting.getDolbyVisionOutputPolicy()).setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON);
     }
 
-    private static MediaItem.DrmConfiguration buildDrmConfig(Drm drm) {
-        return drm == null ? null : new MediaItem.DrmConfiguration.Builder(drm.getUUID()).setMultiSession(!C.CLEARKEY_UUID.equals(drm.getUUID())).setForceDefaultLicenseUri(drm.isForceKey()).setLicenseRequestHeaders(drm.getHeader()).setLicenseUri(drm.getKey()).build();
+    private static AudioSink buildAudioSink(Context context, boolean enableFloatOutput, boolean enableAudioOutputPlaybackParams, AudioProcessor audioProcessor) {
+        DefaultAudioSink.Builder builder = new DefaultAudioSink.Builder(context).setEnableFloatOutput(enableFloatOutput).setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams);
+        if (!DecodeSetting.isAudioPassThrough()) builder.setAudioOutputProvider(new AudioTrackAudioOutputProvider.Builder(null).build());
+        if (audioProcessor != null) builder.setAudioProcessors(new AudioProcessor[]{audioProcessor});
+        return builder.build();
     }
 }

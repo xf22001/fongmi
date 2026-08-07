@@ -1,5 +1,6 @@
 package com.fongmi.android.tv.bean;
 
+import android.net.Uri;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -21,10 +22,10 @@ public class Danmaku {
     @SerializedName("url")
     private String url;
 
-    private boolean selected;
+    private transient boolean selected;
 
     public static List<Danmaku> arrayFrom(String str) {
-        Type listType = new TypeToken<List<Danmaku>>() {}.getType();
+        Type listType = TypeToken.getParameterized(List.class, Danmaku.class).getType();
         List<Danmaku> items = App.gson().fromJson(str, listType);
         return items == null ? Collections.emptyList() : items;
     }
@@ -34,10 +35,6 @@ public class Danmaku {
         danmaku.setName(path);
         danmaku.setUrl(path);
         return danmaku;
-    }
-
-    public static Danmaku empty() {
-        return new Danmaku();
     }
 
     public String getName() {
@@ -68,8 +65,8 @@ public class Danmaku {
         return getUrl().isEmpty();
     }
 
-    public String getRealUrl() {
-        return UrlUtil.convert(getUrl().startsWith("/") ? "file:/" + getUrl() : getUrl());
+    public Uri getUri() {
+        return isEmpty() ? null : UrlUtil.uri(getUrl());
     }
 
     @Override
@@ -77,6 +74,11 @@ public class Danmaku {
         if (this == obj) return true;
         if (!(obj instanceof Danmaku it)) return false;
         return getUrl().equals(it.getUrl());
+    }
+
+    @Override
+    public int hashCode() {
+        return getUrl().hashCode();
     }
 
     @NonNull

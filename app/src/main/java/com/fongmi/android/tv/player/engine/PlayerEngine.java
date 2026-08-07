@@ -1,49 +1,47 @@
 package com.fongmi.android.tv.player.engine;
 
-import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
-import androidx.media3.common.Tracks;
 
-import com.fongmi.android.tv.bean.Track;
-
-import java.util.Collections;
-import java.util.List;
+import com.fongmi.android.tv.bean.Sub;
+import com.fongmi.android.tv.player.effect.PlayerEffect;
+import com.fongmi.android.tv.player.media.PlaySpec;
 
 public interface PlayerEngine {
 
     int SOFT = 0;
     int HARD = 1;
 
+    Type getType();
+
     Player getPlayer();
+
+    int getAudioChannelCount();
 
     void release();
 
-    Player rebuild(Player.Listener listener);
-
-    int getDecode();
-
     void setDecode(int decode);
 
-    boolean isHard();
+    default PlayerEffect getEffect() {
+        return PlayerEffect.NONE;
+    }
 
-    String getDecodeText();
+    void start(PlaySpec spec, long startPositionMs);
 
-    void start(PlaySpec spec);
+    default void preload(PlaySpec spec, long startPositionMs) {
+    }
 
-    void setMetadata(MediaMetadata data);
+    default void clearPreload() {
+    }
 
-    boolean isLive();
+    void stop();
 
-    boolean isVod();
+    default void setSubtitleStyle() {
+    }
 
-    void setTrack(List<Track> tracks);
-
-    void resetTrack();
-
-    boolean haveTrack(int type);
-
-    Tracks getCurrentTracks();
+    default boolean addSubtitle(Sub sub) {
+        return false;
+    }
 
     String getErrorMessage(PlaybackException e);
 
@@ -53,5 +51,10 @@ public interface PlayerEngine {
         RECOVERED,
         DECODE,
         FATAL
+    }
+
+    enum Type {
+        EXO,
+        MPV
     }
 }
