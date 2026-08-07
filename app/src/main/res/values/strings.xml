@@ -30,16 +30,22 @@
     <string name="play_op">OP</string>
     <string name="play_ed">ED</string>
     <string name="play_exo">EXO</string>
+    <string name="play_mpv">MPV</string>
+    <string name="play_other">Other</string>
     <string name="play_next">Next</string>
     <string name="play_prev">Prev</string>
-    <string name="play_loop">Loop</string>
+    <string name="play_stop">Stop</string>
+    <string name="play_repeat">Repeat</string>
     <string name="play_forward">→</string>
     <string name="play_backward">←</string>
-    <string name="play_speed">1.00</string>
+    <string name="play_speed">Speed</string>
+    <string name="play_speed_hint">Speed <xliff:g name="speed">%1$s</xliff:g></string>
     <string name="play_reset">Reset</string>
+    <string name="play_replay">Replay</string>
     <string name="play_decode">Hard</string>
     <string name="play_timer">Timer</string>
-    <string name="play_title">Chapter</string>
+    <string name="play_edition">Title</string>
+    <string name="play_chapter">Chapter</string>
     <string name="play_scale">Default</string>
     <string name="play_config">Config</string>
     <string name="play_change">Change</string>
@@ -56,9 +62,184 @@
     <string name="play_switch_site">Switching site to <xliff:g name="name">%1$s</xliff:g></string>
     <string name="play_switch_parse">Switching parse to <xliff:g name="name">%1$s</xliff:g></string>
 
-    <!-- Danmaku -->
+    <!-- Playback Setting -->
+    <string name="setting_tab_offset">Offset</string>
+    <string name="setting_effect_basic">Basic</string>
+    <string name="setting_effect_scene">Scene</string>
+    <string name="setting_effect_custom">Custom</string>
+    <string name="setting_preset_original">Original</string>
+
+    <!-- Speed Setting -->
+    <string name="speed_setting">Speed settings</string>
+    <string name="speed_setting_reset">Reset</string>
+    <string name="speed_setting_current">Playback speed</string>
+    <string name="speed_setting_long_press">Long press speed</string>
+    <string name="speed_setting_quick">Quick select</string>
+    <string name="speed_setting_skip_silence">Skip silence</string>
+
+    <!-- Audio Setting -->
+    <string name="audio_setting">Audio settings</string>
+    <string name="audio_effect_compare">Compare</string>
+    <string name="audio_effect_reset">Reset</string>
+    <string name="audio_effect_tab_preset">Effects</string>
+    <string name="audio_effect_tab_equalizer">Adjust</string>
+    <string name="audio_effect_tab_advanced">Advanced</string>
+    <string name="audio_offset">Audio offset</string>
+    <string name="audio_effect_category_tone">Tone</string>
+    <string name="audio_effect_category_genre">Genre</string>
+    <string name="audio_effect_natural">Natural</string>
+    <string name="audio_effect_vocal">Vocal</string>
+    <string name="audio_effect_cinema">Cinema</string>
+    <string name="audio_effect_bass">Bass</string>
+    <string name="audio_effect_treble">Treble</string>
+    <string name="audio_effect_pop">Pop</string>
+    <string name="audio_effect_rock">Rock</string>
+    <string name="audio_effect_dance">Dance</string>
+    <string name="audio_effect_electronic">Electro</string>
+    <string name="audio_effect_hiphop">Hip-hop</string>
+    <string name="audio_effect_jazz">Jazz</string>
+    <string name="audio_effect_classical">Classical</string>
+    <string name="audio_effect_custom">Custom</string>
+    <string name="audio_effect_stability">Stable volume</string>
+    <string name="audio_effect_stability_summary">Reduce volume changes within a video</string>
+    <string name="audio_effect_boost">Volume boost</string>
+    <string name="audio_effect_dialogue">Voice boost</string>
+    <string name="audio_effect_balance">Channel balance</string>
+    <string name="audio_effect_headroom">Headroom / preamp</string>
+    <string name="audio_effect_loudness">Loudness balance</string>
+    <string name="audio_effect_loudness_summary">Balance average volume across videos</string>
+    <string name="audio_effect_center_gain">Center gain</string>
+    <string name="audio_channel_mode">Channel mode</string>
+    <string name="audio_channel_auto">Auto</string>
+    <string name="audio_channel_stereo">Stereo</string>
+    <string name="audio_channel_mono">Mono</string>
+    <string name="audio_channel_reverse">Reverse</string>
+    <string name="audio_effect_balance_center">Center</string>
+    <string name="audio_effect_balance_left">L %1$d%%</string>
+    <string name="audio_effect_balance_right">R %1$d%%</string>
+
+    <!-- Video Setting -->
+    <string name="video_setting">Video settings</string>
+    <string name="video_effect_compare">Compare</string>
+    <string name="video_effect_reset">Reset</string>
+    <string name="video_effect_tab_preset">Effects</string>
+    <string name="video_effect_tab_adjust">Adjust</string>
+    <string name="video_effect_category_boost">Boost</string>
+    <string name="video_effect_category_tone">Style</string>
+    <string name="video_effect_natural">Natural</string>
+    <string name="video_effect_vivid">Vivid</string>
+    <string name="video_effect_clear">Clear</string>
+    <string name="video_effect_bright">Bright</string>
+    <string name="video_effect_cinema">Cinema</string>
+    <string name="video_effect_soft">Soft</string>
+    <string name="video_effect_warm">Warm</string>
+    <string name="video_effect_cool">Cool</string>
+    <string name="video_effect_comfort">Comfort</string>
+    <string name="video_effect_anime">Anime</string>
+    <string name="video_effect_sport">Sport</string>
+    <string name="video_effect_game">Game</string>
+    <string name="video_effect_custom">Custom</string>
+    <string name="video_effect_saturation">Saturation</string>
+    <string name="video_effect_contrast">Contrast</string>
+    <string name="video_effect_brightness">Brightness</string>
+    <string name="video_effect_gamma">Gamma</string>
+    <string name="video_effect_hue">Hue</string>
+    <string name="video_effect_temperature">Color temperature</string>
+    <string name="video_effect_sharpness">Sharpness</string>
+    <string name="video_effect_shadow">Shadow lift</string>
+
+    <!-- Subtitle Setting -->
+    <string name="subtitle_setting">Subtitle settings</string>
+    <string name="subtitle_search_api_title">Assrt</string>
+    <string name="subtitle_search_token_hint">Token</string>
+    <string name="subtitle_reset">Reset</string>
+    <string name="subtitle_tab_appearance">Appearance</string>
+    <string name="subtitle_tab_adjust">Adjust</string>
+    <string name="subtitle_tab_advanced">Advanced</string>
+    <string name="subtitle_offset">Subtitle offset</string>
+    <string name="subtitle_size">Size</string>
+    <string name="subtitle_position">Position</string>
+    <string name="subtitle_style_source">Style source</string>
+    <string name="subtitle_style_original">Original</string>
+    <string name="subtitle_style_system">System</string>
+    <string name="subtitle_style_custom">Custom</string>
+    <string name="subtitle_system_setting">System caption settings</string>
+    <string name="subtitle_text_color">Text color</string>
+    <string name="subtitle_text_opacity">Text transparency</string>
+    <string name="subtitle_edge_style">Edge style</string>
+    <string name="subtitle_edge_none">None</string>
+    <string name="subtitle_edge_outline">Outline</string>
+    <string name="subtitle_edge_shadow">Shadow</string>
+    <string name="subtitle_edge_color">Edge color</string>
+    <string name="subtitle_edge_opacity">Edge transparency</string>
+    <string name="subtitle_edge_width">Edge width</string>
+    <string name="subtitle_shadow_strength">Shadow strength</string>
+    <string name="subtitle_background">Background</string>
+    <string name="subtitle_background_opacity">Background transparency</string>
+    <string name="subtitle_secondary_track">Secondary subtitles</string>
+    <string name="subtitle_secondary_off">Off</string>
+    <string name="subtitle_secondary_auto">Auto</string>
+    <string name="subtitle_secondary_select">Select</string>
+    <string name="subtitle_secondary_track_select">Secondary subtitle</string>
+    <string name="subtitle_secondary_position">Secondary position</string>
+    <string name="subtitle_color_white">White</string>
+    <string name="subtitle_color_yellow">Yellow</string>
+    <string name="subtitle_color_cyan">Cyan</string>
+    <string name="subtitle_color_green">Green</string>
+    <string name="subtitle_color_orange">Orange</string>
+    <string name="subtitle_color_pink">Pink</string>
+    <string name="subtitle_color_red">Red</string>
+    <string name="subtitle_color_blue">Blue</string>
+    <string name="subtitle_color_black">Black</string>
+    <string name="subtitle_color_gray">Gray</string>
+    <string name="subtitle_color_transparent">Transparent</string>
+    <string name="subtitle_background_dim">Dim black</string>
+
+    <!-- Danmaku Setting -->
     <string name="danmaku">Danmaku</string>
     <string name="danmaku_select">Select danmaku</string>
+    <string name="danmaku_setting">Danmaku setting</string>
+    <string name="danmaku_text_size">Text scale</string>
+    <string name="danmaku_transparency">Opacity</string>
+    <string name="danmaku_text_bold">Bold</string>
+    <string name="danmaku_style_mode">Text style</string>
+    <string name="danmaku_style_none">None</string>
+    <string name="danmaku_style_shadow">Shadow</string>
+    <string name="danmaku_style_stroke">Stroke</string>
+    <string name="danmaku_style_projection">Projection</string>
+    <string name="danmaku_shadow_transparency">Shadow opacity</string>
+    <string name="danmaku_stroke_width">Stroke width</string>
+    <string name="danmaku_projection_offset_x">Projection offset X</string>
+    <string name="danmaku_projection_offset_y">Projection offset Y</string>
+    <string name="danmaku_projection_transparency">Projection opacity</string>
+    <string name="danmaku_color_mode">Color mode</string>
+    <string name="danmaku_color_default">Default</string>
+    <string name="danmaku_color_colorful">Colorful</string>
+    <string name="danmaku_color_gradient">Gradient</string>
+    <string name="danmaku_color_override_hint">Original colors will be ignored</string>
+    <string name="danmaku_auto">Auto</string>
+    <string name="danmaku_duration">Scroll duration</string>
+    <string name="danmaku_fixed_duration">Fixed duration</string>
+    <string name="danmaku_time_offset">Time offset</string>
+    <string name="danmaku_max_on_screen">Max on screen</string>
+    <string name="danmaku_scroll_area_ratio">Scroll area</string>
+    <string name="danmaku_max_scroll_lines">Max scroll rows</string>
+    <string name="danmaku_max_top_lines">Max top rows</string>
+    <string name="danmaku_max_bottom_lines">Max bottom rows</string>
+    <string name="danmaku_line_spacing">Line gap</string>
+    <string name="danmaku_scroll_gap_ratio">Row gap</string>
+    <string name="danmaku_show_scroll">Scrolling</string>
+    <string name="danmaku_show_top">Top pinned</string>
+    <string name="danmaku_show_bottom">Bottom pinned</string>
+    <string name="danmaku_show_reverse">Reverse scroll</string>
+    <string name="danmaku_show_positioned">Positioned</string>
+    <string name="danmaku_show_subtitle">Subtitle type</string>
+    <string name="danmaku_show_special">Special type</string>
+    <string name="danmaku_section_appearance">Appearance</string>
+    <string name="danmaku_section_display">Display</string>
+    <string name="danmaku_section_timing">Timing</string>
+    <string name="danmaku_section_density">Density</string>
+    <string name="danmaku_reset">Reset</string>
 
     <!-- Parse -->
     <string name="parse">Parse</string>
@@ -74,7 +255,11 @@
     <string name="setting_live">Live</string>
     <string name="setting_wall">Wallpaper</string>
     <string name="setting_player">Player setting</string>
+    <string name="setting_danmaku">Danmaku setting</string>
     <string name="setting_incognito">Incognito mode</string>
+    <string name="setting_theme_color">Theme color</string>
+    <string name="setting_auto">Auto</string>
+    <string name="setting_custom">Custom</string>
     <string name="setting_size">Image size</string>
     <string name="setting_doh">DoH</string>
     <string name="setting_proxy">Proxy</string>
@@ -95,20 +280,40 @@
 
     <!-- Player -->
     <string name="player">Player</string>
+    <string name="player_engine">Engine</string>
+    <string name="player_debug">Debug</string>
     <string name="player_render">Render</string>
     <string name="player_scale">Scale</string>
     <string name="player_libass">libass</string>
-    <string name="player_caption">Caption style</string>
     <string name="player_background">Background play</string>
+    <string name="player_audio_pass_through">Audio passthrough</string>
     <string name="player_audio_decode">Audio software decode</string>
     <string name="player_video_decode">Video software decode</string>
+    <string name="player_dolby_vision_output">Dolby Vision</string>
     <string name="player_aac_track">Prefer aac track</string>
-    <string name="player_danmaku_load">Danmaku load</string>
     <string name="player_adblock">Remove ads</string>
     <string name="player_tunnel">Tunnel mode</string>
     <string name="player_buffer">Buffer time</string>
-    <string name="player_speed">Press speed</string>
+    <string name="player_decode_setting">Decode setting</string>
+    <string name="player_preload_setting">Preload setting</string>
+    <string name="player_preload">Preload</string>
+    <string name="player_preload_next">Preload next episode</string>
+    <string name="player_preload_threads">Preload threads</string>
+    <string name="player_preload_threads_value">%1$d threads</string>
+    <string name="player_preload_size">Preload size</string>
+    <string name="player_preload_time">Preload time</string>
+    <string name="player_preload_time_value">%1$d seconds</string>
+    <string name="player_mpv_conf">mpv.conf</string>
+    <string name="player_mpv_gpu_next">gpu-next</string>
+    <string name="player_mpv_vulkan">vulkan</string>
+    <string name="player_mpv_conf_import_success">Imported mpv.conf</string>
     <string name="player_ua">User-Agent</string>
+
+    <!-- Danmaku -->
+    <string name="danmaku_load">Danmaku load</string>
+    <string name="danmaku_api">Search API</string>
+    <string name="danmaku_auto_load">Auto search</string>
+    <string name="danmaku_spider_first">Spider first</string>
 
     <!-- Search -->
     <string name="search_keyword">Keywords…</string>
@@ -120,7 +325,8 @@
     <string name="dialog_edit">Edit</string>
     <string name="dialog_positive">OK</string>
     <string name="dialog_negative">Cancel</string>
-    <string name="dialog_select_title">Select chapter</string>
+    <string name="dialog_select_edition">Select title</string>
+    <string name="dialog_select_chapter">Select chapter</string>
     <string name="dialog_config_hint">Please enter the config…</string>
     <string name="dialog_config_name">Please enter the name…</string>
     <string name="dialog_config_url">Please enter the url…</string>
@@ -134,6 +340,15 @@
     <string name="error_play_url">Unable to load url</string>
     <string name="error_play_flag">No flag data</string>
     <string name="error_play_timeout">Timed out</string>
+    <string name="error_audio_effect_unsupported">Audio settings are unavailable for the current playback mode</string>
+    <string name="error_audio_effect_tunnel">Audio settings are unavailable in tunnel mode</string>
+    <string name="error_audio_effect_passthrough">Audio settings are unavailable for passthrough audio</string>
+    <string name="error_audio_effect_apply">Unable to apply audio settings</string>
+    <string name="error_video_effect_unsupported">Video settings are unavailable for the current playback mode</string>
+    <string name="error_video_effect_decode">Video settings require hardware video decoding</string>
+    <string name="error_video_effect_drm">Video settings are unavailable for DRM video</string>
+    <string name="error_video_effect_tunnel">Video settings are unavailable in tunnel mode</string>
+    <string name="error_video_effect_dolby_vision_passthrough">Video settings are unavailable for Dolby Vision passthrough</string>
     <string name="error_play_tvbus">Error code: <xliff:g name="name">%1$s</xliff:g></string>
     <string name="error_detail">No play data</string>
     <string name="error_empty">Nothing here 👀</string>
@@ -155,6 +370,7 @@
 
     <!-- UNIT -->
     <string name="all">All</string>
+    <string name="yes">Yes</string>
     <string name="none">None</string>
     <string name="times">times</string>
     <string name="lines">lines</string>
@@ -162,6 +378,17 @@
     <string-array name="select_decode">
         <item>Soft</item>
         <item>Hard</item>
+    </string-array>
+
+    <string-array name="select_dolby_vision_output">
+        <item>Auto</item>
+        <item>On</item>
+        <item>Off</item>
+    </string-array>
+
+    <string-array name="select_engine">
+        <item>EXO</item>
+        <item>MPV</item>
     </string-array>
 
     <string-array name="select_render">
@@ -184,14 +411,13 @@
         <item>Zoom</item>
     </string-array>
 
-    <string-array name="select_reset">
-        <item>Reset</item>
-        <item>Replay</item>
-    </string-array>
-
-    <string-array name="select_caption">
-        <item>Default</item>
-        <item>System</item>
+    <string-array name="audio_effect_stability_levels">
+        <item>Off</item>
+        <item>Slight</item>
+        <item>Soft</item>
+        <item>Standard</item>
+        <item>Noticeable</item>
+        <item>Strong</item>
     </string-array>
 
     <string-array name="select_track">

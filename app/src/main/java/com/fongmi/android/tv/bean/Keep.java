@@ -38,7 +38,7 @@ public class Keep implements Diffable<Keep> {
     private int cid;
 
     public static List<Keep> arrayFrom(String str) {
-        Type listType = new TypeToken<List<Keep>>() {}.getType();
+        Type listType = TypeToken.getParameterized(List.class, Keep.class).getType();
         List<Keep> items = App.gson().fromJson(str, listType);
         return items == null ? Collections.emptyList() : items;
     }
@@ -79,6 +79,15 @@ public class Keep implements Diffable<Keep> {
         targets.forEach(target -> configs.stream()
                 .filter(config -> target.getCid() == config.getId()).findFirst()
                 .ifPresent(config -> target.save(Config.find(config).getId())));
+    }
+
+    public static void replace(String oldKey, String newKey) {
+        if (oldKey.equals(newKey)) return;
+        Keep keep = find(oldKey);
+        if (keep == null) return;
+        keep.delete();
+        keep.setKey(newKey);
+        keep.save();
     }
 
     @NonNull
@@ -147,6 +156,7 @@ public class Keep implements Diffable<Keep> {
     }
 
     public void save(int cid) {
+        setKey(getSiteKey().concat(AppDatabase.SYMBOL).concat(getVodId()).concat(AppDatabase.SYMBOL) + cid);
         setCid(cid);
         save();
     }

@@ -116,7 +116,7 @@ public class CollectFragment extends BaseFragment implements MenuProvider, Colle
         for (Site site : mSites) width = Math.max(width, ResUtil.getTextWidth(site.getName(), 14));
         int contentWidth = width + space;
         int minWidth = ResUtil.dp2px(120);
-        int finalWidth = Math.max(minWidth, Math.min(contentWidth, maxWidth));
+        int finalWidth = Math.clamp(contentWidth, minWidth, Math.max(minWidth, maxWidth));
         ViewGroup.LayoutParams params = mBinding.collect.getLayoutParams();
         params.width = finalWidth;
         mBinding.collect.setLayoutParams(params);
@@ -151,7 +151,7 @@ public class CollectFragment extends BaseFragment implements MenuProvider, Colle
     @Override
     public void onItemClick(int position, Collect item) {
         mSearchAdapter.setItems(item.getList(), () -> mBinding.recycler.scrollToPosition(0));
-        mCollectAdapter.setActivated(position);
+        mCollectAdapter.setSelected(position);
         mScroller.setPage(item.getPage());
     }
 
@@ -162,12 +162,12 @@ public class CollectFragment extends BaseFragment implements MenuProvider, Colle
     }
 
     @Override
-    public void onLoadMore(String page) {
+    public boolean onLoadMore(String page) {
         Collect activated = mCollectAdapter.getActivated();
-        if ("all".equals(activated.getSite().getKey())) return;
+        if ("all".equals(activated.getSite().getKey())) return false;
         mViewModel.searchContent(activated.getSite(), getKeyword(), false, page);
         activated.setPage(Integer.parseInt(page));
-        mScroller.setLoading(true);
+        return true;
     }
 
     @Override

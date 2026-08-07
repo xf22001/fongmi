@@ -18,21 +18,21 @@ import androidx.viewbinding.ViewBinding;
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
 import com.fongmi.android.tv.R;
-import com.fongmi.android.tv.Setting;
-import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.bean.Config;
 import com.fongmi.android.tv.bean.Device;
 import com.fongmi.android.tv.bean.History;
 import com.fongmi.android.tv.bean.Keep;
 import com.fongmi.android.tv.databinding.DialogDeviceBinding;
 import com.fongmi.android.tv.impl.Callback;
+import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.activity.ScanActivity;
 import com.fongmi.android.tv.ui.adapter.DeviceAdapter;
+import com.fongmi.android.tv.ui.custom.SpaceItemDecoration;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.ResUtil;
 import com.fongmi.android.tv.utils.ScanTask;
+import com.fongmi.android.tv.utils.Task;
 import com.github.catvod.net.OkHttp;
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.io.IOException;
 import java.util.Locale;
@@ -42,9 +42,8 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Response;
 
-public class SyncDialog extends BaseDialog implements DeviceAdapter.OnClickListener, ScanTask.Listener {
+public class SyncDialog extends BaseBottomSheetDialog implements DeviceAdapter.OnClickListener, ScanTask.Listener {
 
-    private final FormBody.Builder body;
     private final OkHttpClient client;
     private final TypedArray mode;
 
@@ -53,33 +52,26 @@ public class SyncDialog extends BaseDialog implements DeviceAdapter.OnClickListe
     private ScanTask scanTask;
     private String type;
 
-    public static SyncDialog create() {
-        return new SyncDialog();
-    }
-
     public SyncDialog() {
-        body = new FormBody.Builder();
         scanTask = new ScanTask(this);
         client = OkHttp.client(Constant.TIMEOUT_SYNC);
         mode = ResUtil.getTypedArray(R.array.cast_mode);
     }
 
+    public static SyncDialog create() {
+        return new SyncDialog();
+    }
+
     public SyncDialog history() {
-        body.add("device", Device.get().toString());
-        body.add("config", Config.vod().toString());
-        body.add("targets", App.gson().toJson(History.get()));
         return type("history");
     }
 
     public SyncDialog keep() {
-        body.add("device", Device.get().toString());
-        body.add("targets", App.gson().toJson(Keep.getVod()));
-        body.add("configs", App.gson().toJson(Config.findUrls()));
         return type("keep");
     }
 
     public void show(FragmentActivity activity) {
-        for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof BottomSheetDialogFragment) return;
+        for (Fragment f : activity.getSupportFragmentManager().getFragments()) if (f instanceof SyncDialog) return;
         show(activity.getSupportFragmentManager(), null);
     }
 
@@ -111,11 +103,13 @@ public class SyncDialog extends BaseDialog implements DeviceAdapter.OnClickListe
     private void setRecyclerView() {
         binding.recycler.setHasFixedSize(false);
         binding.recycler.setAdapter(adapter = new DeviceAdapter(this));
+        binding.recycler.addItemDecoration(new SpaceItemDecoration(1, 16));
     }
 
     private void getDevice() {
         adapter.setItems(Device.getAll(), () -> {
             if (adapter.getItemCount() == 0) onRefresh();
+            else binding.recycler.setVisibility(View.VISIBLE);
         });
     }
 
@@ -140,6 +134,7 @@ public class SyncDialog extends BaseDialog implements DeviceAdapter.OnClickListe
         adapter.clear(() -> {
             Device.delete();
             scanTask.start();
+            binding.recycler.setVisibility(View.GONE);
         });
     }
 
@@ -149,27 +144,45 @@ public class SyncDialog extends BaseDialog implements DeviceAdapter.OnClickListe
 
     @Override
     public void onFind(Device device) {
+        binding.recycler.setVisibility(View.VISIBLE);
         adapter.sort(device);
     }
 
     @Override
     public void onItemClick(Device item) {
-        OkHttp.newCall(client, String.format(Locale.getDefault(), "%s/action?do=sync&mode=%s&type=%s", item.getIp(), binding.mode.getTag().toString(), type), body.build()).enqueue(getCallback());
+        send(item, binding.mode.getTag().toString(), false);
     }
 
     @Override
     public boolean onLongClick(Device item) {
         String mode = binding.mode.getTag().toString();
         if (mode.equals("0")) return false;
-        if (mode.equals("2")) deleteLocal();
-        String force = mode.equals("1") ? "&force=true" : "";
-        OkHttp.newCall(client, String.format(Locale.getDefault(), "%s/action?do=sync&mode=%s&type=%s%s", item.getIp(), mode, type, force), body.build()).enqueue(getCallback());
+        send(item, mode, true);
         return true;
     }
 
-    private void deleteLocal() {
-        if (type.equals("keep")) Keep.deleteAll();
-        if (type.equals("history")) History.delete(VodConfig.getCid());
+    private void send(Device item, String mode, boolean force) {
+        String url = String.format(Locale.getDefault(), "%s/action?do=sync&mode=%s&type=%s%s", item.getIp(), mode, type, force ? "&force=true" : "");
+        Runnable request = () -> OkHttp.newCall(client, url, buildBody()).enqueue(getCallback());
+        if (type.equals("history")) Task.executeSerial(request);
+        else request.run();
+    }
+
+    private FormBody buildBody() {
+        if (type.equals("history")) {
+            Config config = Config.vod();
+            FormBody.Builder body = new FormBody.Builder();
+            body.add("device", Device.get().toString());
+            body.add("config", config.toString());
+            body.add("targets", App.gson().toJson(History.get(config.getId())));
+            return body.build();
+        } else {
+            FormBody.Builder body = new FormBody.Builder();
+            body.add("device", Device.get().toString());
+            body.add("targets", App.gson().toJson(Keep.getVod()));
+            body.add("configs", App.gson().toJson(Config.findUrls()));
+            return body.build();
+        }
     }
 
     private Callback getCallback() {

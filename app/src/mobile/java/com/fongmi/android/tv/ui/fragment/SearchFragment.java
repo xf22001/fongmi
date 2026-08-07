@@ -2,6 +2,7 @@ package com.fongmi.android.tv.ui.fragment;
 
 import static androidx.fragment.app.FragmentTransaction.TRANSIT_FRAGMENT_OPEN;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -24,10 +25,10 @@ import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.R;
-import com.fongmi.android.tv.Setting;
 import com.fongmi.android.tv.bean.Word;
 import com.fongmi.android.tv.databinding.FragmentSearchBinding;
 import com.fongmi.android.tv.impl.Callback;
+import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.ui.adapter.RecordAdapter;
 import com.fongmi.android.tv.ui.adapter.WordAdapter;
 import com.fongmi.android.tv.ui.base.BaseFragment;
@@ -40,7 +41,6 @@ import com.google.android.flexbox.FlexboxLayoutManager;
 import com.google.common.net.HttpHeaders;
 
 import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.Map;
 import java.util.Optional;
 
@@ -162,7 +162,7 @@ public class SearchFragment extends BaseFragment implements MenuProvider, WordAd
 
     private void getSuggest(String text) {
         mBinding.word.setText(R.string.search_suggest);
-        OkHttp.newCall("https://suggest.video.iqiyi.com/?if=mobile&key=" + URLEncoder.encode(text)).enqueue(getCallback(false));
+        OkHttp.newCall("https://suggest.video.iqiyi.com/?if=mobile&key=" + Uri.encode(text)).enqueue(getCallback(false));
     }
 
     private Callback getCallback(boolean hot) {
@@ -189,7 +189,7 @@ public class SearchFragment extends BaseFragment implements MenuProvider, WordAd
 
     private void onSite() {
         Util.hideKeyboard(mBinding.keyword);
-        mBinding.keyword.post(() -> SiteDialog.create(this).search().show());
+        mBinding.keyword.post(() -> SiteDialog.create().search().show(this));
     }
 
     @Override

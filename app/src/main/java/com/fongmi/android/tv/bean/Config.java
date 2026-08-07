@@ -45,9 +45,15 @@ public class Config {
     @Ignore
     @SerializedName("notice")
     private String notice;
+    @Ignore
+    @SerializedName("danmaku")
+    private String danmaku;
+    @Ignore
+    @SerializedName("assrt")
+    private String assrt;
 
     public static List<Config> arrayFrom(String str) {
-        Type listType = new TypeToken<List<Config>>() {}.getType();
+        Type listType = TypeToken.getParameterized(List.class, Config.class).getType();
         List<Config> items = App.gson().fromJson(str, listType);
         return items == null ? Collections.emptyList() : items;
     }
@@ -205,6 +211,22 @@ public class Config {
 
     public void setNotice(String notice) {
         this.notice = notice;
+    }
+
+    public String getDanmaku() {
+        return danmaku;
+    }
+
+    public void setDanmaku(String danmaku) {
+        this.danmaku = danmaku;
+    }
+
+    public String getAssrt() {
+        return assrt;
+    }
+
+    public void setAssrt(String assrt) {
+        this.assrt = assrt;
     }
 
     public Config type(int type) {

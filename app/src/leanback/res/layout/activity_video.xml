@@ -12,6 +12,7 @@
         android:layout_height="225dp"
         android:layout_margin="24dp"
         android:background="@color/black"
+        android:defaultFocusHighlightEnabled="false"
         android:focusable="true"
         android:focusableInTouchMode="true"
         android:foreground="@drawable/selector_video"
@@ -21,16 +22,11 @@
         android:nextFocusDown="@id/flag">
 
         <androidx.media3.ui.PlayerView
-            android:id="@+id/exo"
+            android:id="@+id/player"
             style="@style/Player.Vod"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:surface_type="surface_view" />
-
-        <master.flame.danmaku.ui.widget.DanmakuView
-            android:id="@+id/danmaku"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
 
         <include
             android:id="@+id/widget"
@@ -204,7 +200,7 @@
             app:drawableStartCompat="@drawable/ic_detail_keep_off" />
 
         <com.google.android.material.textview.MaterialTextView
-            android:id="@+id/change1"
+            android:id="@+id/change"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:background="@drawable/selector_item"
@@ -212,7 +208,7 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:gravity="center"
-            android:nextFocusRight="@id/change1"
+            android:nextFocusRight="@id/change"
             android:nextFocusUp="@id/actor"
             android:nextFocusDown="@id/flag"
             android:singleLine="true"
