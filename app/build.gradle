@@ -100,7 +100,7 @@ androidComponents {
 }
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.aar"])
+    implementation fileTree(dir: "libs", include: ["*.aar"], exclude: ["chaquo-release.aar"])
     implementation project(':catvod')
     implementation project(':chaquo')
     implementation project(':quickjs')
@@ -144,7 +144,9 @@ dependencies {
     implementation "androidx.media3:media3-database:${media3Version}"
     implementation "androidx.media3:media3-datasource:${media3Version}"
     implementation "androidx.media3:media3-datasource-okhttp:${media3Version}"
-    implementation "androidx.media3:media3-datasource-rtmp:${media3Version}"
+    implementation("androidx.media3:media3-datasource-rtmp:${media3Version}") {
+        exclude group: "io.antmedia", module: "rtmp-client"
+    }
     implementation "androidx.media3:media3-decoder:${media3Version}"
     implementation "androidx.media3:media3-effect:${media3Version}"
     implementation "androidx.media3:media3-exoplayer:${media3Version}"
