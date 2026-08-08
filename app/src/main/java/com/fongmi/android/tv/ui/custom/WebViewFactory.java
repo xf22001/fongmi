@@ -4,7 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.fongmi.android.tv.App;
-import com.fongmi.android.tv.Setting;
+import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.impl.IWebView;
 import com.fongmi.android.tv.utils.Notify;
 import com.fongmi.android.tv.utils.X5Initializer;

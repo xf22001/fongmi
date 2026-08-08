@@ -12,7 +12,7 @@ import androidx.annotation.NonNull;
 
 import com.fongmi.android.tv.App;
 import com.fongmi.android.tv.Constant;
-import com.fongmi.android.tv.Setting;
+import com.fongmi.android.tv.setting.Setting;
 import com.fongmi.android.tv.api.config.LiveConfig;
 import com.fongmi.android.tv.api.config.VodConfig;
 import com.fongmi.android.tv.impl.IWebView;
@@ -163,7 +163,7 @@ public class X5WebViewWrapper extends FrameLayout implements IWebView, DialogInt
     private void showDialog() {
         if (dialog != null || App.activity() == null) return;
         if (getParent() != null) ((ViewGroup) getParent()).removeView(this);
-        dialog = new WebDialog(webView).show();
+        dialog = WebDialog.create(webView).show();
         App.removeCallbacks(timer);
     }
 
