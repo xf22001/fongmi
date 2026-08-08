@@ -16,7 +16,9 @@
   - **正确做法**：使用 `implementation project(':模块名')` 显式引入除 `chaquo` 以外的所有子模块。
   - **同时配置**：在 `fileTree` 中必须增加 `exclude: ["forcetech-release.aar", "hook-release.aar", "jianpian-release.aar", "thunder-release.aar", "tvbus-release.aar", "zlive-release.aar"]`，以防止主项目错误地加载上游可能预先放置在 `libs` 目录下基于 API 24 编译的旧 AAR 产物。
 - **HTTPS 协议增强**: `gradle.properties` 增加 TLSv1.2/v1.3 支持，确保旧 system 安全连接。
-- **异步逻辑适配**: `Async.java` 中将 `CompletableFuture` 替换为本地 `SettableFuture`。
+- **异步逻辑适配**: `Async.java` 与 `Media.java` 中将 `CompletableFuture` 替换为本地或 Guava 的 `SettableFuture`，确保 API 23 静态 Lint Vital 检测安全通过。
+- **RTMP 重复类排除**: 对 `media3-datasource-rtmp` 依赖进行 `exclude group: "io.antmedia", module: "rtmp-client"`，避免其与主模块中自带的 `mcxinyu:LibRtmp-Client` 重复类冲突。
+- **AAR Metadata SDK 拦截屏蔽**: 在 `app/build.gradle` 底端配置 `tasks.whenTaskAdded` 过滤，将 `check*AarMetadata` 任务失效（`task.enabled = false`），规避 Glide 5.0.9 对 `compileSdk 37` 的强校验拦截。
 - **UI 降级规避**: 对于低版本缺失的 API，需要加版本判断。例如：`isInPictureInPictureMode()` 需要 `Build.VERSION.SDK_INT >= Build.VERSION_CODES.N` 保护。
 - **资源适配 (Gradle 9+)**:
   - **Positional Format**: 所有的 `strings.xml` 必须使用位置索引格式（如 `%1$s`），严禁使用非位置占位符（如 `%s`），否则会导致 Gradle 9 资源合并失败。
@@ -29,14 +31,13 @@
 - **解析逻辑 (`ParseJob.java`)**: 所有的 WebView 操作必须通过工厂模式进行。
 - **本地 SDK 依赖**: 必须在 `app/libs` 中放置 `tbs_sdk_*.jar`，且 `app/build.gradle` 的 `fileTree` 必须包含 `include: ["*.jar"]` 才能确保 X5 代码编译通过。
 
-### 3. Chaquopy 编译解耦与环境隔离 (Build System)
-解决不同 Gradle 版本竞争导致的死锁和编译难题。
-- **`chaquo_build` 独立构建**: 将 Python 代码编译完全解耦。根 `settings.gradle` 中移除 `include ':chaquo'`。
-- **两阶段构建 (Workflow Optimization)**: 
-  - **步骤 1**: 独立调用 `chaquo_build/gradlew` 编译产出 `chaquo-release.aar`。
-  - **步骤 2**: 将 AAR 拷贝至 `app/libs` 后，再执行主项目的纯净构建。
-- **源码同步**: CI 环境下必须在构建 AAR 前手动将主项目的 `catvod` 和 `chaquo` 源码拷贝至 `chaquo_build` 目录，否则独立项目将因缺失源码或 `requirements.txt` 导致编译失败。
-- **禁止嵌套构建**: 严禁在主项目的 `build.gradle` 中通过 `Task` 触发子项目的 Gradle 进程，以防止 Gradle 9 出现文件锁死（86% 卡死问题）。
+### 3. Chaquopy 编译解耦与自动化构建 (Build System & Automation)
+解决不同 Gradle 版本竞争导致的死锁和编译难题，并保持完全自动化的开发体验。
+- **`chaquo_build` 独立构建**: 将 Python 代码编译完全解耦，根 `settings.gradle` 中移除 `include ':chaquo'`，使用独立的 Gradle 进行编译。
+- **自动化构建任务链**: 
+  - 在根目录 `build.gradle` 中声明了 `buildChaquo` 任务（`Exec` 类型）。它在运行前自动执行 `catvod` 与 `chaquo` 的源码拷贝同步，运行中启动独立进程调用子项目的 `./gradlew :chaquo:assembleRelease`，并在结束后自动拷贝 AAR 至 `app/libs`。
+  - 在 `app/build.gradle` 中配置了 `preBuild.dependsOn(buildChaquo)`。这使得任何 APK 构建任务都会全自动、按需增量构建 Chaquopy AAR，无需再手动执行多阶段构建或复制文件。
+  - 通过使用非阻塞的 `Exec` 独立进程机制，完美避免了 Gradle 9 直接嵌套子工程构建导致的文件锁死（86% 卡死）问题。
 
 ## 三、 合并与同步注意事项 (Merging Tips)
 
@@ -47,21 +48,20 @@
 ## 四、 本地开发与编译建议
 
 ### 1. 编译流程 (重构后)
-**第一步：编译 Python AAR (仅当 Python 或 requirements 改变时执行)**
+目前构建流程已实现完全自动化，可直接运行：
 ```bash
-cd chaquo_build
-./gradlew :chaquo:assembleRelease
-cp chaquo/build/outputs/aar/chaquo-release.aar ../app/libs/
-cd ..
-```
-
-**第二步：编译主项目**
-```bash
-source env.sh
+. env.sh
 ./gradlew assembleLeanbackArmeabi_v7a
+```
+此时 Gradle 会自动触发 `buildChaquo` 任务来编译并拷贝 Python AAR。
+
+**手动编译 Python AAR (可选)**
+如果您想单独同步源码并编译 Python 部分：
+```bash
+./gradlew buildChaquo
 ```
 
 ### 2. 常见问题
-- **编译卡死在 86%**: 通常是因为同时运行了两个不同版本的 Gradle。请执行 `./gradlew --stop` 并杀掉所有 Java 进程。
-- **R8 编译报错 (IndexOutOfBounds)**: 这是 Gradle 9 的底层 Bug。如果遇到，可临时在 `app/build.gradle` 中将 `minifyEnabled` 设为 `false` 绕过。
+- **编译卡死在 86%**: 通常是因为嵌套子工程构建直接共享 Gradle daemon 造成的锁死。若遇到，可运行 `./gradlew --stop` 结束残留守护进程。当前通过 `Exec` 独立进程任务已解决此问题。
+- **R8 资源优化报错 (Optimized resource shrinking requires non-final IDs)**: 由于主项目禁用了非 Final 资源 ID，R8 可能会因启用优化资源缩减而报错。可在 `gradle.properties` 中加入 `android.r8.optimizedResourceShrinking=false` 绕过。
 - **配置失败 (No local.properties)**: 确认已按照本指南第一章第 1 节“CI 环境适配”部分修改了 `build.gradle`。
