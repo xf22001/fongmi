@@ -15,7 +15,7 @@ import com.fongmi.android.tv.service.PlaybackService;
 import com.google.gson.JsonObject;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import com.google.common.util.concurrent.SettableFuture;
 
 import fi.iki.elonen.NanoHTTPD.IHTTPSession;
 import fi.iki.elonen.NanoHTTPD.Response;
@@ -31,8 +31,8 @@ public class Media implements Process {
     public Response doResponse(IHTTPSession session, String url, Map<String, String> files) {
         PlaybackService service = Server.get().getService();
         if (service == null) return Nano.ok("{}");
-        CompletableFuture<String> future = new CompletableFuture<>();
-        App.post(() -> future.complete(build(service.player()).toString()));
+        SettableFuture<String> future = SettableFuture.create();
+        App.post(() -> future.set(build(service.player()).toString()));
         try {
             return Nano.ok(future.get());
         } catch (Exception ignored) {

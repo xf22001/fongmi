@@ -18,3 +18,45 @@ project(':app').tasks.matching { it.name ==~ /assemble.+Release/ }.configureEach
         }
     }
 }
+
+tasks.register('buildChaquo', Exec) {
+    doFirst {
+        delete "$rootDir/chaquo_build/catvod/src", "$rootDir/chaquo_build/chaquo/src"
+        copy {
+            from "$rootDir/catvod/src"
+            into "$rootDir/chaquo_build/catvod/src"
+        }
+        copy {
+            from "$rootDir/catvod/proguard-rules.pro"
+            into "$rootDir/chaquo_build/catvod"
+        }
+        copy {
+            from "$rootDir/chaquo/src"
+            into "$rootDir/chaquo_build/chaquo/src"
+        }
+        copy {
+            from "$rootDir/chaquo/requirements.txt"
+            into "$rootDir/chaquo_build/chaquo"
+        }
+        copy {
+            from "$rootDir/chaquo/proguard-rules.pro"
+            into "$rootDir/chaquo_build/chaquo"
+        }
+        println "Chaquopy source files synchronized to chaquo_build."
+    }
+
+    workingDir "$rootDir/chaquo_build"
+    if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+        commandLine 'cmd', '/c', 'gradlew.bat :chaquo:assembleRelease'
+    } else {
+        commandLine './gradlew', ':chaquo:assembleRelease'
+    }
+
+    doLast {
+        copy {
+            from "$rootDir/chaquo_build/chaquo/build/outputs/aar/chaquo-release.aar"
+            into "$rootDir/app/libs"
+        }
+        println "Chaquopy AAR compiled and copied to app/libs/chaquo-release.aar"
+    }
+}
