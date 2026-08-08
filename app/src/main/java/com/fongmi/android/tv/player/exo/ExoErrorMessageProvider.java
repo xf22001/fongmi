@@ -23,7 +23,6 @@ public class ExoErrorMessageProvider {
             case PlaybackException.ERROR_CODE_DECODER_QUERY_FAILED -> "Decoder Query Failed";
             case PlaybackException.ERROR_CODE_DECODING_FAILED -> "Decoding Failed";
             case PlaybackException.ERROR_CODE_DECODING_FORMAT_UNSUPPORTED -> "Decoding Format Unsupported";
-            case PlaybackException.ERROR_CODE_DECODING_RESOURCES_RECLAIMED -> "Decoding Resources Reclaimed";
             case PlaybackException.ERROR_CODE_DECODING_FORMAT_EXCEEDS_CAPABILITIES -> "Decoding Format Exceeds Capabilities";
             case PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED -> "Audio Track Init Failed";
             case PlaybackException.ERROR_CODE_AUDIO_TRACK_WRITE_FAILED -> "Audio Track Write Failed";

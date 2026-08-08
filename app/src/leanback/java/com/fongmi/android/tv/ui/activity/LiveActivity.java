@@ -17,7 +17,7 @@ import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.Player;
 import androidx.media3.common.VideoSize;
 import androidx.media3.ui.PlayerSeekView;
-import androidx.media3.ui.PlayerView;
+import com.fongmi.android.tv.ui.custom.CustomPlayerView;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewbinding.ViewBinding;
 
@@ -137,7 +137,7 @@ public class LiveActivity extends PlaybackActivity implements GroupAdapter.OnCli
     }
 
     @Override
-    protected PlayerView getPlayerView() {
+    protected CustomPlayerView getPlayerView() {
         return mBinding.player;
     }
 
