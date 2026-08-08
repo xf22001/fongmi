@@ -22,7 +22,6 @@ import androidx.media3.session.MediaLibraryService.MediaLibrarySession;
 import androidx.media3.session.MediaSession;
 import androidx.media3.session.SessionCommand;
 import androidx.media3.session.SessionCommands;
-import androidx.media3.session.SessionError;
 import androidx.media3.session.SessionResult;
 import androidx.media3.ui.danmaku.DanmakuConfig;
 
@@ -120,17 +119,24 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
 
     private void setupNotification() {
         DefaultMediaNotificationProvider provider = new DefaultMediaNotificationProvider.Builder(this).build();
-        session.setMediaButtonPreferences(ImmutableList.of(buildRepeatButton(), buildStopButton()));
         provider.setSmallIcon(R.drawable.ic_notification);
         setMediaNotificationProvider(provider);
     }
 
     private CommandButton buildStopButton() {
-        return new CommandButton.Builder(CommandButton.ICON_STOP).setPlayerCommand(Player.COMMAND_STOP).setDisplayName(getString(R.string.play_stop)).build();
+        return new CommandButton.Builder()
+                .setPlayerCommand(Player.COMMAND_STOP)
+                .setIconResId(androidx.media3.ui.R.drawable.exo_icon_stop)
+                .setDisplayName(getString(R.string.play_stop))
+                .build();
     }
 
     private CommandButton buildRepeatButton() {
-        return new CommandButton.Builder(player.isRepeatOne() ? CommandButton.ICON_REPEAT_ONE : CommandButton.ICON_REPEAT_OFF).setSessionCommand(COMMAND_REPEAT).setDisplayName(getString(R.string.play_repeat)).build();
+        return new CommandButton.Builder()
+                .setSessionCommand(COMMAND_REPEAT)
+                .setIconResId(player.isRepeatOne() ? androidx.media3.ui.R.drawable.exo_icon_repeat_one : androidx.media3.ui.R.drawable.exo_icon_repeat_off)
+                .setDisplayName(getString(R.string.play_repeat))
+                .build();
     }
 
     @Override
@@ -539,7 +545,6 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
 
         @Override
         public void onRepeatModeChanged(int repeatMode) {
-            if (session != null) session.setMediaButtonPreferences(ImmutableList.of(buildRepeatButton(), buildStopButton()));
         }
     };
 
@@ -576,7 +581,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
     public ListenableFuture<LibraryResult<MediaItem>> onGetItem(@NonNull MediaLibrarySession session, @NonNull MediaSession.ControllerInfo browser, @NonNull String mediaId) {
         return Task.executor().submit(() -> {
             MediaItem item = BrowseTree.getItem(mediaId);
-            return item != null ? LibraryResult.ofItem(item, null) : LibraryResult.ofError(SessionError.ERROR_BAD_VALUE);
+            return item != null ? LibraryResult.ofItem(item, null) : LibraryResult.ofError(LibraryResult.RESULT_ERROR_BAD_VALUE);
         });
     }
 

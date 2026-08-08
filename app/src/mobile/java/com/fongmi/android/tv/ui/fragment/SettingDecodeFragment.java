@@ -6,7 +6,7 @@ import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.media3.common.DolbyVisionOutputPolicy;
+
 import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
@@ -85,7 +85,7 @@ public class SettingDecodeFragment extends BaseFragment {
     }
 
     private void setDolbyVisionOutput(View view) {
-        int mode = (DecodeSetting.getDolbyVisionOutputPolicy() + 1) % (DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED + 1);
+        int mode = (DecodeSetting.getDolbyVisionOutputPolicy() + 1) % 3;
         DecodeSetting.putDolbyVisionOutputPolicy(mode);
         mBinding.dolbyVisionOutputText.setText(ResUtil.getStringArray(R.array.select_dolby_vision_output)[mode]);
     }

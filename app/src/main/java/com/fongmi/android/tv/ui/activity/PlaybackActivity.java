@@ -25,7 +25,7 @@ import androidx.media3.exoplayer.drm.FrameworkMediaDrm;
 import androidx.media3.session.MediaController;
 import androidx.media3.session.SessionToken;
 import androidx.media3.ui.PlayerSeekView;
-import androidx.media3.ui.PlayerView;
+import com.fongmi.android.tv.ui.custom.CustomPlayerView;
 import androidx.media3.ui.TimeBar;
 import androidx.media3.ui.danmaku.DanmakuConfig;
 
@@ -120,7 +120,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
 
     protected abstract PlayerSeekView getSeekView();
 
-    protected abstract PlayerView getPlayerView();
+    protected abstract CustomPlayerView getPlayerView();
 
     protected abstract String getPlaybackKey();
 
@@ -414,7 +414,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void configurePlayerView() {
-        PlayerView playerView = getPlayerView();
+        CustomPlayerView playerView = getPlayerView();
         playerView.setRender(PlayerSetting.getRender());
         playerView.setDanmakuOkHttpClient(OkHttp.player());
         playerView.setDanmakuEnabled(DanmakuSetting.isShow());

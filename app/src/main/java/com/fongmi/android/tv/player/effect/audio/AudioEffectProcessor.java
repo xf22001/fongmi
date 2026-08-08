@@ -3,7 +3,6 @@ package com.fongmi.android.tv.player.effect.audio;
 import androidx.annotation.NonNull;
 import androidx.media3.common.C;
 import androidx.media3.common.audio.BaseAudioProcessor;
-import androidx.media3.mpvplayer.audio.AudioChannelMix;
 
 import java.nio.ByteBuffer;
 
@@ -69,7 +68,7 @@ public final class AudioEffectProcessor extends BaseAudioProcessor {
     }
 
     @Override
-    protected void onFlush(@NonNull StreamMetadata streamMetadata) {
+    protected void onFlush() {
         resetState();
     }
 
