@@ -1,6 +1,6 @@
 package com.fongmi.android.tv.setting;
 
-import androidx.media3.common.DolbyVisionOutputPolicy;
+
 
 import com.github.catvod.utils.Prefers;
 
@@ -30,12 +30,12 @@ public class DecodeSetting {
         Prefers.put("decode_video_prefer", videoPrefer);
     }
 
-    public static @DolbyVisionOutputPolicy.Mode int getDolbyVisionOutputPolicy() {
-        int mode = Prefers.getInt("decode_dolby_vision_output_policy", DolbyVisionOutputPolicy.AUTO);
-        return mode >= DolbyVisionOutputPolicy.AUTO && mode <= DolbyVisionOutputPolicy.ASSUME_UNSUPPORTED ? mode : DolbyVisionOutputPolicy.AUTO;
+    public static int getDolbyVisionOutputPolicy() {
+        int mode = Prefers.getInt("decode_dolby_vision_output_policy", 0);
+        return mode >= 0 && mode <= 2 ? mode : 0;
     }
 
-    public static void putDolbyVisionOutputPolicy(@DolbyVisionOutputPolicy.Mode int mode) {
+    public static void putDolbyVisionOutputPolicy(int mode) {
         Prefers.put("decode_dolby_vision_output_policy", mode);
     }
 
