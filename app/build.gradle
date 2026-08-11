@@ -107,7 +107,7 @@ androidComponents {
 
 
 dependencies {
-    implementation fileTree(dir: "libs", include: ["*.aar", "*.jar"], exclude: ["forcetech-release.aar", "hook-release.aar", "jianpian-release.aar", "thunder-release.aar", "tvbus-release.aar", "zlive-release.aar"])
+    implementation fileTree(dir: "libs", include: ["*.aar", "*.jar"], exclude: ["forcetech-release.aar", "hook-release.aar", "jianpian-release.aar", "thunder-release.aar", "tvbus-release.aar", "zlive-release.aar", "chaquo-release.aar"])
     implementation project(':catvod')
     implementation files('libs/chaquo-release.aar')
     implementation project(":forcetech")

@@ -15,6 +15,13 @@ import com.fongmi.android.tv.player.effect.PlayerEffect;
 import com.fongmi.android.tv.player.engine.PlayerEngine;
 import com.fongmi.android.tv.player.media.MediaItemFactory;
 import com.fongmi.android.tv.player.media.PlaySpec;
+import androidx.media3.common.MediaChapter;
+import androidx.media3.common.Metadata;
+import androidx.media3.extractor.metadata.id3.ChapterFrame;
+import androidx.media3.extractor.metadata.id3.TextInformationFrame;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class ExoPlayerEngine implements PlayerEngine, AnalyticsListener {
 
@@ -51,6 +58,29 @@ public class ExoPlayerEngine implements PlayerEngine, AnalyticsListener {
     }
 
     @Override
+    public void onMetadata(@NonNull EventTime eventTime, @NonNull Metadata metadata) {
+        for (int i = 0; i < metadata.length(); i++) {
+            Metadata.Entry entry = metadata.get(i);
+            if (entry instanceof ChapterFrame) {
+                ChapterFrame frame = (ChapterFrame) entry;
+                String label = frame.chapterId;
+                for (int j = 0; j < frame.getSubFrameCount(); j++) {
+                    Metadata.Entry subEntry = frame.getSubFrame(j);
+                    if (subEntry instanceof TextInformationFrame) {
+                        label = ((TextInformationFrame) subEntry).value;
+                        break;
+                    }
+                }
+                long timeUs = frame.startTimeMs * 1000L;
+                MediaChapter chapter = new MediaChapter(label, timeUs);
+                if (!chapters.contains(chapter)) {
+                    chapters.add(chapter);
+                }
+            }
+        }
+    }
+
+    @Override
     public Type getType() {
         return Type.EXO;
     }
@@ -84,9 +114,17 @@ public class ExoPlayerEngine implements PlayerEngine, AnalyticsListener {
         session.setDecode(decode);
     }
 
+    private final List<MediaChapter> chapters = new ArrayList<>();
+
+    @Override
+    public List<MediaChapter> getCurrentMediaChapters() {
+        return chapters;
+    }
+
     @Override
     public void start(PlaySpec spec, long startPositionMs) {
         this.spec = spec;
+        this.chapters.clear();
         startInternal(startPositionMs);
     }
 

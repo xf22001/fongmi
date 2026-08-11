@@ -21,3 +21,5 @@ build/
 /chaquo_build/chaquo/src/
 /chaquo_build/.gradle/
 /docs
+__pycache__/
+env.sh
