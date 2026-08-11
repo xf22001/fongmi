@@ -6,6 +6,7 @@ public class MpvErrorMessageProvider {
 
     public String get(PlaybackException e) {
         return switch (e.errorCode) {
+
             case PlaybackException.ERROR_CODE_FAILED_RUNTIME_CHECK -> "MPV Runtime Error";
             case PlaybackException.ERROR_CODE_IO_UNSPECIFIED -> "MPV IO Error";
             case PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED -> "MPV Container Unsupported";

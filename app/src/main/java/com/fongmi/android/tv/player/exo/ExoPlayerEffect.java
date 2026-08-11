@@ -42,30 +42,25 @@ public final class ExoPlayerEffect implements PlayerEffect {
 
     @Override
     public boolean supportsVideoEffect() {
-        return player != null;
+        return false;
     }
 
     @Override
     public int getVideoEffectError() {
-        return 0;
+        return R.string.error_video_effect_unsupported;
     }
 
     @Override
     public void applyVideoEffect() {
-        if (supportsVideoEffect() && (previewVideoEffect || VideoSetting.isEnabled())) videoEffectController.apply(player, getVideoProfile());
-        else videoEffectController.clear(player);
     }
 
     @Override
     public void previewVideoEffect(boolean original) {
-        if (previewVideoEffect == original) return;
-        previewVideoEffect = original;
-        applyVideoEffect();
     }
 
     @Override
     public boolean supportsAudioEffect() {
-        return !audioEffectFailed;
+        return false;
     }
 
     @Override
@@ -75,12 +70,12 @@ public final class ExoPlayerEffect implements PlayerEffect {
 
     @Override
     public int getAudioEffectError() {
-        return 0;
+        return R.string.error_audio_effect_unsupported;
     }
 
     @Override
     public void applyAudioEffect() {
-        applyAudioConfig(getAudioChannelCount());
+        clearAudioEffect();
     }
 
     public void clearAudioEffect() {
@@ -90,14 +85,11 @@ public final class ExoPlayerEffect implements PlayerEffect {
 
     @Override
     public void previewAudioEffect(boolean original) {
-        if (previewAudioEffect == original) return;
-        previewAudioEffect = original;
-        applyAudioEffect();
     }
 
     @Override
     public boolean supportsSkipSilence() {
-        return true;
+        return false;
     }
 
     @Override

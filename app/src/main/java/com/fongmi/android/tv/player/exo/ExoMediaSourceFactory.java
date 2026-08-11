@@ -15,6 +15,7 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource;
 import androidx.media3.exoplayer.drm.DrmSessionManagerProvider;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.exoplayer.source.MediaSource;
+import androidx.media3.exoplayer.source.preload.MediaSourceFactorySupplier;
 import androidx.media3.exoplayer.upstream.LoadErrorHandlingPolicy;
 import androidx.media3.extractor.DefaultExtractorsFactory;
 import androidx.media3.extractor.ExtractorsFactory;
@@ -45,6 +46,26 @@ public class ExoMediaSourceFactory implements MediaSource.Factory {
         defaultMediaSourceFactory = new DefaultMediaSourceFactory(getDataSourceFactory(), getExtractorsFactory());
     }
 
+    static MediaSourceFactorySupplier supplier() {
+        return new MediaSourceFactorySupplier() {
+            @NonNull
+            @Override
+            public MediaSourceFactorySupplier setCache(Cache cache) {
+                return this;
+            }
+
+            @NonNull
+            @Override
+            public MediaSourceFactorySupplier setDataSourceFactory(DataSource.Factory dataSourceFactory) {
+                return this;
+            }
+
+            @Override
+            public MediaSource.Factory get() {
+                return new ExoMediaSourceFactory();
+            }
+        };
+    }
 
     static DataSource.Factory createUpstreamDataSourceFactory(Map<String, String> headers) {
         HttpDataSource.Factory factory = new OkHttpDataSource.Factory(OkHttp.player());

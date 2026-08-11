@@ -9,3 +9,6 @@
 lib-*.aar
 /Release
 /docs
+miniconda/
+__pycache__/
+env.sh
