@@ -16,9 +16,11 @@ import androidx.media3.exoplayer.ExoPlayer;
 import androidx.media3.exoplayer.LoadControl;
 import androidx.media3.exoplayer.RenderersFactory;
 import androidx.media3.exoplayer.audio.AudioSink;
+import androidx.media3.exoplayer.audio.AudioTrackAudioOutputProvider;
 import androidx.media3.exoplayer.audio.DefaultAudioSink;
+import androidx.media3.exoplayer.source.preload.DefaultPreloadManager;
+import androidx.media3.exoplayer.trackselection.DecodeTrackSelector;
 import androidx.media3.exoplayer.trackselection.DefaultTrackSelector;
-import androidx.media3.exoplayer.trackselection.TrackSelector;
 import androidx.media3.exoplayer.util.EventLogger;
 
 import com.fongmi.android.tv.App;
@@ -35,13 +37,9 @@ import java.util.stream.Collectors;
 
 public class ExoUtil {
 
-    public static ExoPlayer buildPlayer(Player.Listener listener, TrackSelector trackSelector, RenderersFactory renderersFactory, LoadControl loadControl) {
-        ExoPlayer.Builder playerBuilder = new ExoPlayer.Builder(App.get())
-                .setSkipSilenceEnabled(SpeedSetting.isSkipSilence())
-                .setTrackSelector(trackSelector)
-                .setRenderersFactory(renderersFactory)
-                .setLoadControl(loadControl);
-        ExoPlayer player = playerBuilder.build();
+    public static ExoPlayer buildPlayer(Player.Listener listener, DefaultPreloadManager.Builder preloadManagerBuilder) {
+        ExoPlayer.Builder playerBuilder = new ExoPlayer.Builder(App.get()).setSkipSilenceEnabled(SpeedSetting.isSkipSilence());
+        ExoPlayer player = preloadManagerBuilder.buildExoPlayer(playerBuilder);
         if (BuildConfig.DEBUG) player.addAnalyticsListener(new EventLogger());
         player.setAudioAttributes(AudioAttributes.DEFAULT, true);
         player.setHandleAudioBecomingNoisy(true);
@@ -52,10 +50,11 @@ public class ExoUtil {
 
     public static String getMimeType(int errorCode) {
         if (errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_UNSUPPORTED || errorCode == PlaybackException.ERROR_CODE_PARSING_CONTAINER_MALFORMED || errorCode == PlaybackException.ERROR_CODE_IO_UNSPECIFIED) return MimeTypes.APPLICATION_M3U8;
+        if (errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_UNSUPPORTED || errorCode == PlaybackException.ERROR_CODE_PARSING_MANIFEST_MALFORMED) return "application/octet-stream";
         return null;
     }
 
-    static LoadControl buildLoadControl() {
+    static LoadControl buildLoadControl(int maxPreloadBufferBytes) {
         int buffer = PlayerSetting.getBuffer();
         return new DefaultLoadControl.Builder().setBufferDurationsMs(DefaultLoadControl.DEFAULT_MIN_BUFFER_MS * buffer, DefaultLoadControl.DEFAULT_MAX_BUFFER_MS * buffer, DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_MS, DefaultLoadControl.DEFAULT_BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS).build();
     }
@@ -66,8 +65,8 @@ public class ExoUtil {
         return extras.keySet().stream().filter(key -> extras.getString(key) != null).collect(Collectors.toMap(key -> key, extras::getString));
     }
 
-    static DefaultTrackSelector buildTrackSelector(int decode) {
-        DefaultTrackSelector trackSelector = new DefaultTrackSelector(App.get());
+    static DecodeTrackSelector buildTrackSelector(int decode) {
+        DecodeTrackSelector trackSelector = new DecodeTrackSelector(App.get());
         DefaultTrackSelector.Parameters.Builder builder = trackSelector.buildUponParameters();
         if (DecodeSetting.isPreferAAC()) builder.setPreferredAudioMimeType(MimeTypes.AUDIO_AAC);
         builder.setPreferredTextLanguages(LangUtil.getPreferredTextLanguages());
@@ -78,9 +77,10 @@ public class ExoUtil {
         return trackSelector;
     }
 
-    static void setDecodePreferences(DefaultTrackSelector trackSelector, int decode) {
-        // DecodeTrackSelector is a closed-source API. Standard DefaultTrackSelector does not support renderer decode preferences,
-        // so this is a safe no-op on the open-source media3 build.
+    static void setDecodePreferences(DecodeTrackSelector trackSelector, int decode) {
+        int audioDecode = isAudioSoftwareDecode(decode) ? PlayerEngine.SOFT : PlayerEngine.HARD;
+        int videoDecode = isVideoSoftwareDecode(decode) ? PlayerEngine.SOFT : PlayerEngine.HARD;
+        trackSelector.setRendererDecodePreferences(audioDecode, videoDecode);
     }
 
     private static boolean isAudioSoftwareDecode(int decode) {

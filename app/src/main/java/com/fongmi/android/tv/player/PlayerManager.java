@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.C;
 import androidx.media3.common.Format;
+import androidx.media3.common.MediaChapter;
+import androidx.media3.common.MediaEdition;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.MediaMetadata;
 import androidx.media3.common.PlaybackException;
@@ -99,6 +101,15 @@ public class PlayerManager implements ParseCallback {
     public int getAudioChannelCount() {
         return engine == null ? Format.NO_VALUE : engine.getAudioChannelCount();
     }
+
+    public List<MediaChapter> getCurrentMediaChapters() {
+        return engine == null ? List.of() : engine.getCurrentMediaChapters();
+    }
+
+    public List<MediaEdition> getCurrentMediaEditions() {
+        return engine == null ? List.of() : engine.getCurrentMediaEditions();
+    }
+
     public MediaItem getCurrentMediaItem() {
         return player.getCurrentMediaItem();
     }
@@ -192,12 +203,13 @@ public class PlayerManager implements ParseCallback {
     }
 
     public boolean haveEdition() {
-        return false;
+        return !getCurrentMediaEditions().isEmpty();
     }
 
     public boolean haveChapter() {
-        return false;
+        return !getCurrentMediaChapters().isEmpty();
     }
+
     public boolean haveDanmaku() {
         return spec != null && spec.getSelectedDanmaku() != null;
     }
@@ -261,9 +273,9 @@ public class PlayerManager implements ParseCallback {
     public void setEngine(int targetEngine) {
         PlayerSetting.putEngine(targetEngine);
         if (isEmpty() || PlayerEngineFactory.matches(engine, spec)) return;
-        PlaybackSnapshot snapshot = PlaybackSnapshot.capture(player);
+        PlaybackSnapshot snapshot = PlaybackSnapshot.capture(this);
         startCurrent(snapshot.positionMs());
-        snapshot.restore(player);
+        snapshot.restore(this);
     }
 
     public String getPositionTime(long delta) {
@@ -289,9 +301,12 @@ public class PlayerManager implements ParseCallback {
         startCurrent();
     }
 
-    public static MediaMetadata buildMetadata(String title, String artist, String artUri) {
-        Uri artwork = TextUtils.isEmpty(artUri) ? null : Uri.parse(artUri);
-        return new MediaMetadata.Builder().setTitle(title).setArtist(artist).setArtworkUri(artwork).build();
+    public void selectChapter(MediaChapter chapter) {
+        if (engine != null) engine.selectChapter(chapter);
+    }
+
+    public void selectEdition(MediaEdition edition) {
+        if (engine != null) engine.selectEdition(edition);
     }
 
     public void setDanmakuConfig(DanmakuConfig config) {
@@ -403,17 +418,19 @@ public class PlayerManager implements ParseCallback {
     }
 
     public long getTextOffsetMs() {
-        return 0;
+        return engine == null ? 0 : engine.getTextOffsetMs();
     }
 
     public void setTextOffsetMs(long offsetMs) {
+        if (engine != null) engine.setTextOffsetMs(offsetMs);
     }
 
     public long getAudioOffsetMs() {
-        return 0;
+        return engine == null ? 0 : engine.getAudioOffsetMs();
     }
 
     public void setAudioOffsetMs(long offsetMs) {
+        if (engine != null) engine.setAudioOffsetMs(offsetMs);
     }
 
     public void reset() {
@@ -452,9 +469,9 @@ public class PlayerManager implements ParseCallback {
 
     private void retryDecode(int decode) {
         setDecode(decode);
-        PlaybackSnapshot snapshot = PlaybackSnapshot.capture(player);
+        PlaybackSnapshot snapshot = PlaybackSnapshot.capture(this);
         startCurrent(snapshot.positionMs());
-        snapshot.restore(player);
+        snapshot.restore(this);
     }
 
     private void setDecode(int decode) {
@@ -606,17 +623,21 @@ public class PlayerManager implements ParseCallback {
 
     private record PlaybackSnapshot(long positionMs, boolean playWhenReady, PlaybackParameters playbackParameters, int repeatMode, float volume, long audioOffsetMs, long textOffsetMs) {
 
-        private static PlaybackSnapshot capture(Player player) {
+        private static PlaybackSnapshot capture(PlayerManager manager) {
+            Player player = manager.player;
             float volume = player.isCommandAvailable(Player.COMMAND_GET_VOLUME) ? player.getVolume() : Float.NaN;
-            long audioOffsetMs = C.TIME_UNSET;
-            long textOffsetMs = C.TIME_UNSET;
+            long audioOffsetMs = manager.getAudioOffsetMs();
+            long textOffsetMs = manager.getTextOffsetMs();
             return new PlaybackSnapshot(player.getCurrentPosition(), player.getPlayWhenReady(), player.getPlaybackParameters(), player.getRepeatMode(), volume, audioOffsetMs, textOffsetMs);
         }
 
-        private void restore(Player player) {
+        private void restore(PlayerManager manager) {
+            Player player = manager.player;
             if (player.isCommandAvailable(Player.COMMAND_SET_SPEED_AND_PITCH)) player.setPlaybackParameters(playbackParameters);
             if (player.isCommandAvailable(Player.COMMAND_SET_REPEAT_MODE)) player.setRepeatMode(repeatMode);
             if (!Float.isNaN(volume) && player.isCommandAvailable(Player.COMMAND_SET_VOLUME)) player.setVolume(volume);
+            if (audioOffsetMs != C.TIME_UNSET) manager.setAudioOffsetMs(audioOffsetMs);
+            if (textOffsetMs != C.TIME_UNSET) manager.setTextOffsetMs(textOffsetMs);
             if (player.isCommandAvailable(Player.COMMAND_PLAY_PAUSE)) player.setPlayWhenReady(playWhenReady);
         }
     }
@@ -643,7 +664,6 @@ public class PlayerManager implements ParseCallback {
         }
 
         @Override
-
         public void onPlayerError(@NonNull PlaybackException e) {
             if (spec == null) return;
             PlayerEngine.ErrorAction action = engine.handleError(e);

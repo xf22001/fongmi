@@ -1,7 +1,12 @@
 package com.fongmi.android.tv.player.engine;
 
+import androidx.media3.common.C;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
+import androidx.media3.common.MediaChapter;
+import androidx.media3.common.MediaEdition;
+import java.util.List;
+import java.util.Collections;
 
 import com.fongmi.android.tv.bean.Sub;
 import com.fongmi.android.tv.player.effect.PlayerEffect;
@@ -41,6 +46,34 @@ public interface PlayerEngine {
 
     default boolean addSubtitle(Sub sub) {
         return false;
+    }
+
+    default List<MediaChapter> getCurrentMediaChapters() {
+        return Collections.emptyList();
+    }
+
+    default List<MediaEdition> getCurrentMediaEditions() {
+        return Collections.emptyList();
+    }
+
+    default void selectChapter(MediaChapter chapter) {
+    }
+
+    default void selectEdition(MediaEdition edition) {
+    }
+
+    default long getTextOffsetMs() {
+        return 0;
+    }
+
+    default void setTextOffsetMs(long offsetMs) {
+    }
+
+    default long getAudioOffsetMs() {
+        return 0;
+    }
+
+    default void setAudioOffsetMs(long offsetMs) {
     }
 
     String getErrorMessage(PlaybackException e);
