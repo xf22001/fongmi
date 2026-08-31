@@ -100,7 +100,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: release-apks
-          path: '**/build/outputs/apk/**/release/*.apk'
+          path: 'Release/apk/*.apk'
           retention-days: 7
 
       - name: Extract version name
@@ -123,7 +123,7 @@ jobs:
             Built from commit: ${{ github.sha }}
             Version: ${{ steps.version.outputs.version_name }}
           files: |
-            **/build/outputs/apk/**/release/*.apk
+            Release/apk/*.apk
           draft: true
           prerelease: false
           generate_release_notes: true
