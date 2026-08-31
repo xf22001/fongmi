@@ -23,9 +23,34 @@ public interface MpvPlayer extends Player {
 
     void setDecode(int decode);
 
-    void addSubtitle(MediaItem.SubtitleConfiguration subtitleConfiguration);
+    boolean addSubtitle(MediaItem.SubtitleConfiguration subtitleConfiguration);
 
     void setSubtitleOptions(MpvSubtitleOptions options);
+
+    default androidx.media3.common.TrackSelectionOverride getPrimaryTextTrackSelectionOverride() {
+        return null;
+    }
+
+    default androidx.media3.common.TrackSelectionOverride getSecondaryTextTrackSelectionOverride() {
+        return null;
+    }
+
+    default java.util.List<androidx.media3.common.TrackSelectionOverride> getSecondaryTextTrackSelectionOverrides() {
+        return java.util.Collections.emptyList();
+    }
+
+    default boolean isSecondaryTextTrackSuppressed() {
+        return false;
+    }
+
+    default void setSecondaryTextTrackSelectionOverride(androidx.media3.common.TrackSelectionOverride selection) {
+    }
+
+    default void resetSecondaryTextTrackSelection() {
+    }
+
+    default void setSecondaryTextTrackAutoSelectionEnabled(boolean enabled) {
+    }
 
     int getVideoEffectsSupport();
 
