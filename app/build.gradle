@@ -158,10 +158,4 @@ dependencies {
     implementation "androidx.media3:media3-ui:${media3Version}"
 }
 
-tasks.whenTaskAdded { task ->
-    if (task.name.contains("check") && task.name.contains("AarMetadata")) {
-        task.enabled = false
-    }
-}
-
 preBuild.dependsOn(rootProject.tasks.named('buildChaquo'))

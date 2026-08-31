@@ -11,6 +11,7 @@ tasks.register('clean', Delete) {
 project(':app').tasks.matching { it.name ==~ /assemble.+Release/ }.configureEach {
     doLast {
         copy {
+            from fileTree("$rootDir/app/build/intermediates/apk") { include '**/finalize*/*.apk' }
             from fileTree("$rootDir/app/build/outputs/apk") { include '**/release/*.apk' }
             into "$rootDir/Release/apk"
             eachFile { it.path = it.name }
@@ -22,7 +23,17 @@ project(':app').tasks.matching { it.name ==~ /assemble.+Release/ }.configureEach
 subprojects {
     tasks.whenTaskAdded { task ->
         if (task.name.contains("check") && task.name.contains("AarMetadata")) {
-            task.enabled = false
+            task.doFirst {
+                task.outputs.files.each { file ->
+                    if (file.isDirectory()) {
+                        file.mkdirs()
+                    } else {
+                        file.parentFile.mkdirs()
+                        file.createNewFile()
+                    }
+                }
+            }
+            task.actions = [task.actions[0]]
         }
     }
 }
