@@ -22,6 +22,7 @@ public class DanmakuConfig {
     public float projectionOffsetYMultiplier = 0.08f;
     public float projectionTransparency = 0.2f;
     public int colorMode = COLOR_MODE_DEFAULT;
+    public android.graphics.Typeface typeface = null;
 
     public int durationMs = 8000;
     public int fixedDurationMs = 8000;
@@ -45,6 +46,7 @@ public class DanmakuConfig {
         public Builder setTextScale(float scale) { return this; }
         public Builder setTransparency(float val) { return this; }
         public Builder setTextBold(boolean val) { return this; }
+        public Builder setTypeface(android.graphics.Typeface val) { return this; }
         public Builder setStyleMode(int val) { return this; }
         public Builder setShadowTransparency(float val) { return this; }
         public Builder setStrokeWidthMultiplier(float val) { return this; }

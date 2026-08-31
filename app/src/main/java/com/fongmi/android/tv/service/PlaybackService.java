@@ -32,6 +32,7 @@ import com.fongmi.android.tv.browse.BrowseTree;
 import com.fongmi.android.tv.event.ActionEvent;
 import com.fongmi.android.tv.event.ConfigEvent;
 import com.fongmi.android.tv.player.PlayerManager;
+import com.fongmi.android.tv.player.media.ArtworkBitmapLoader;
 import com.fongmi.android.tv.player.media.PlaySpec;
 import com.fongmi.android.tv.server.Server;
 import com.fongmi.android.tv.utils.Task;
@@ -103,7 +104,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         player = new PlayerManager(this);
         sessionPlayer = player.getPlayer();
         sessionPlayer.addListener(listener);
-        session = new MediaLibrarySession.Builder(this, wrap(sessionPlayer), this).build();
+        session = new MediaLibrarySession.Builder(this, wrap(sessionPlayer), this).setBitmapLoader(new ArtworkBitmapLoader(this)).build();
         session.setSessionActivity(buildDefaultIntent());
         EventBus.getDefault().register(this);
         Server.get().setService(this);
@@ -513,7 +514,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
     }
 
     @Override
-    public void onDanmakuSourceChanged(Uri uri) {
+    public void onDanmakuSourceChanged(@Nullable Uri uri) {
         playerCallbacks.forEach(callback -> callback.onDanmakuSourceChanged(uri));
     }
 
@@ -613,7 +614,7 @@ public class PlaybackService extends MediaLibraryService implements MediaLibrary
         default void onPlayerRebuild(Player player) {
         }
 
-        default void onDanmakuSourceChanged(Uri uri) {
+        default void onDanmakuSourceChanged(@Nullable Uri uri) {
         }
 
         default void onDanmakuConfigChanged(DanmakuConfig config) {
