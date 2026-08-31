@@ -6,6 +6,7 @@ import android.content.res.AssetManager;
 import android.os.Build;
 
 import com.chaquo.python.Python;
+import com.chaquo.python.android.AndroidPlatform;
 import com.chaquo.python.internal.Common;
 import com.github.catvod.Init;
 
@@ -65,6 +66,7 @@ public class Platform extends Python.Platform {
             }
         }
         if (ABI == null) throw new RuntimeException("No supported ABI found in: " + supportedAbis);
+        AndroidPlatform.ABI = ABI;
     }
 
     @Override

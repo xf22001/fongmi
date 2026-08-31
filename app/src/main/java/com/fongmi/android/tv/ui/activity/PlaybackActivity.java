@@ -29,6 +29,7 @@ import androidx.media3.ui.PlayerSeekView;
 import com.fongmi.android.tv.ui.custom.CustomPlayerView;
 import androidx.media3.ui.TimeBar;
 import androidx.media3.ui.danmaku.DanmakuConfig;
+import androidx.media3.ui.danmaku.DanmakuPlayerViewController;
 
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.bean.Result;
@@ -51,6 +52,7 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class PlaybackActivity extends BaseActivity implements MediaController.Listener, Player.Listener, ServiceConnection {
 
+    private final DanmakuPlayerViewController danmakuController = new DanmakuPlayerViewController();
     private final List<ServiceReadyObserver<?>> serviceReadyObservers = new ArrayList<>();
     private final List<Runnable> foreverObserverRemovers = new ArrayList<>();
     private ListenableFuture<MediaController> mControllerFuture;
@@ -410,22 +412,29 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     }
 
     private void syncPlayerView(Player player) {
+        player().bindPlayerView(getPlayerView());
+        danmakuController.bind(getPlayerView());
         getPlayerView().setPlayer(player);
         syncDanmakuSource();
+        restoreDebugView();
+    }
+
+    private void restoreDebugView() {
+        if (PlayerSetting.isDebug() && !getPlayerView().isDebugViewVisible()) getPlayerView().toggleDebugView();
     }
 
     private void configurePlayerView() {
         CustomPlayerView playerView = getPlayerView();
         playerView.setRender(PlayerSetting.getRender());
-        playerView.setDanmakuOkHttpClient(OkHttp.player());
-        playerView.setDanmakuEnabled(DanmakuSetting.isShow());
-        playerView.setDanmakuConfig(DanmakuSetting.getConfig());
-        SubtitleSetting.applyStyle(this, playerView.getSubtitleView());
+        danmakuController.setOkHttpClient(OkHttp.player());
+        danmakuController.setEnabled(DanmakuSetting.isShow());
+        danmakuController.setConfig(DanmakuSetting.getConfig());
+        SubtitleSetting.applyStyle(playerView.getSubtitleView());
     }
 
     private void syncDanmakuSource() {
         if (mService == null || !isOwner()) return;
-        getPlayerView().setDanmakuSource(player().getSelectedDanmakuUri());
+        danmakuController.setDataSource(player().getSelectedDanmakuUri());
     }
 
     private void releasePlaybackService() {
@@ -496,7 +505,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         @Override
         public void onTracksChanged() {
             if (isOwner()) PlaybackActivity.this.onTracksChanged();
-            if (PlayerSetting.isDebug() && !getPlayerView().isDebugViewVisible()) getPlayerView().toggleDebugView();
+            restoreDebugView();
         }
 
         @Override
@@ -520,23 +529,23 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
         }
 
         @Override
-        public void onDanmakuSourceChanged(Uri uri) {
-            if (isOwner()) getPlayerView().setDanmakuSource(uri);
+        public void onDanmakuSourceChanged(@Nullable Uri uri) {
+            if (isOwner()) danmakuController.setDataSource(uri);
         }
 
         @Override
         public void onDanmakuConfigChanged(DanmakuConfig config) {
-            if (isOwner()) getPlayerView().setDanmakuConfig(config);
+            if (isOwner()) danmakuController.setConfig(config);
         }
 
         @Override
         public void onDanmakuEnabledChanged(boolean enabled) {
-            if (isOwner()) getPlayerView().setDanmakuEnabled(enabled);
+            if (isOwner()) danmakuController.setEnabled(enabled);
         }
 
         @Override
         public void onDanmakuSent(String text) {
-            if (isOwner()) getPlayerView().sendDanmaku(text);
+            if (isOwner()) danmakuController.sendNow(text);
         }
     };
 
@@ -616,6 +625,7 @@ public abstract class PlaybackActivity extends BaseActivity implements MediaCont
     protected void onDestroy() {
         clearObservers();
         detachPlayerView();
+        danmakuController.close();
         super.onDestroy();
         releasePlaybackService();
     }

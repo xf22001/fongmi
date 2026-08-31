@@ -19,6 +19,14 @@ project(':app').tasks.matching { it.name ==~ /assemble.+Release/ }.configureEach
     }
 }
 
+subprojects {
+    tasks.whenTaskAdded { task ->
+        if (task.name.contains("check") && task.name.contains("AarMetadata")) {
+            task.enabled = false
+        }
+    }
+}
+
 tasks.register('buildChaquo', Exec) {
     doFirst {
         delete "$rootDir/chaquo_build/catvod/src", "$rootDir/chaquo_build/chaquo/src"

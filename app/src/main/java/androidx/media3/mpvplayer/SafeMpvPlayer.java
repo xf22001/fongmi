@@ -29,7 +29,8 @@ public class SafeMpvPlayer extends ForwardingPlayer implements MpvPlayer {
     }
 
     @Override
-    public void addSubtitle(MediaItem.SubtitleConfiguration subtitleConfiguration) {
+    public boolean addSubtitle(MediaItem.SubtitleConfiguration subtitleConfiguration) {
+        return false;
     }
 
     @Override
