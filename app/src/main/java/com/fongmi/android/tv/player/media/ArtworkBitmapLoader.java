@@ -33,7 +33,7 @@ public final class ArtworkBitmapLoader implements BitmapLoader {
     private final DataSourceBitmapLoader decoder;
 
     public ArtworkBitmapLoader(Context context) {
-        decoder = new DataSourceBitmapLoader.Builder(context).setMaximumOutputDimension(MediaSession.getBitmapDimensionLimit(context) * 2 - 1).build();
+        decoder = new DataSourceBitmapLoader(context);
     }
 
     @Override

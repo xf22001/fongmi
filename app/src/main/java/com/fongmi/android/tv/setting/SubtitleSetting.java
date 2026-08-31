@@ -57,10 +57,10 @@ public class SubtitleSetting {
     private static final float DEFAULT_TEXT_OPACITY = 1.0f;
     private static final float DEFAULT_EDGE_OPACITY = 1.0f;
     private static final float DEFAULT_BACKGROUND_OPACITY = 1.0f;
-    private static final float DEFAULT_EDGE_WIDTH = CaptionStyleCompat.DEFAULT_EDGE_WIDTH;
-    private static final float DEFAULT_SHADOW = CaptionStyleCompat.DEFAULT_SHADOW_OFFSET;
+    private static final float DEFAULT_EDGE_WIDTH = 2.0f;
+    private static final float DEFAULT_SHADOW = 2.0f;
     private static final float SYSTEM_EDGE_WIDTH = 1.65f;
-    private static final CaptionStyleCompat DEFAULT_STYLE = createCaptionStyle(DEFAULT_TEXT_COLOR, DEFAULT_BACKGROUND_COLOR, DEFAULT_EDGE_TYPE, DEFAULT_EDGE_COLOR, DEFAULT_EDGE_WIDTH, DEFAULT_SHADOW);
+    private static final CaptionStyleCompat DEFAULT_STYLE = createCaptionStyle(DEFAULT_TEXT_COLOR, DEFAULT_BACKGROUND_COLOR, DEFAULT_EDGE_TYPE, DEFAULT_EDGE_COLOR);
     private static final int DEFAULT_SECONDARY_MODE = SECONDARY_MODE_DEFAULT;
     private static final float DEFAULT_SECONDARY_POSITION = 10.0f;
 
@@ -289,33 +289,31 @@ public class SubtitleSetting {
     }
 
     private static CaptionStyleCompat getCustomStyle() {
-        return createCaptionStyle(getTextColor(), getBackgroundColor(), getEdgeType(), getEdgeColor(), getEdgeWidth(), getShadow());
+        return createCaptionStyle(getTextColor(), getBackgroundColor(), getEdgeType(), getEdgeColor());
     }
 
     private static CaptionStyleCompat getSystemStyle() {
         CaptioningManager manager = (CaptioningManager) App.get().getSystemService(Context.CAPTIONING_SERVICE);
         CaptionStyleCompat style = manager == null ? CaptionStyleCompat.DEFAULT : CaptionStyleCompat.createFromCaptionStyle(manager.getUserStyle());
         int backgroundColor = style.edgeType == CaptionStyleCompat.EDGE_TYPE_DROP_SHADOW ? Color.TRANSPARENT : style.backgroundColor;
-        return createCaptionStyle(style.foregroundColor, backgroundColor, style.edgeType, style.edgeColor, SYSTEM_EDGE_WIDTH, DEFAULT_SHADOW);
+        return createCaptionStyle(style.foregroundColor, backgroundColor, style.edgeType, style.edgeColor);
     }
 
-    private static CaptionStyleCompat createCaptionStyle(int foregroundColor, int backgroundColor, int edgeType, int edgeColor, float edgeWidth, float shadowOffset) {
-        return new CaptionStyleCompat(foregroundColor, backgroundColor, Color.TRANSPARENT, edgeType, edgeColor, null, edgeWidth, shadowOffset);
+    private static CaptionStyleCompat createCaptionStyle(int foregroundColor, int backgroundColor, int edgeType, int edgeColor) {
+        return new CaptionStyleCompat(foregroundColor, backgroundColor, Color.TRANSPARENT, edgeType, edgeColor, null);
     }
 
     private static CaptionStyleCompat withTypeface(CaptionStyleCompat style, @Nullable Typeface typeface) {
-        if (typeface != null) style = new CaptionStyleCompat(style.foregroundColor, style.backgroundColor, style.windowColor, style.edgeType, style.edgeColor, typeface, style.edgeWidth, style.shadowOffset);
+        if (typeface != null) style = new CaptionStyleCompat(style.foregroundColor, style.backgroundColor, style.windowColor, style.edgeType, style.edgeColor, typeface);
         return style;
     }
 
     public static void applyStyle(@Nullable SubtitleView subtitleView) {
         if (subtitleView == null) return;
-        subtitleView.reset();
         subtitleView.setStyle(getStyle());
         subtitleView.setApplyEmbeddedStyles(!isStyleForced());
         subtitleView.setApplyEmbeddedFontSizes(true);
-        if (isScaleApplied()) subtitleView.setTextSizeScale(getAppliedScale());
-        if (isPositionSet()) subtitleView.setBottomPosition(getPosition() / 100.0f);
+        if (isScaleApplied()) subtitleView.setFractionalTextSize(SubtitleView.DEFAULT_TEXT_SIZE_FRACTION * getAppliedScale());
     }
 
     public static void resetAdjust() {

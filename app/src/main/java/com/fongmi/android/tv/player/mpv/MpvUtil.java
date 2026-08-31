@@ -113,6 +113,6 @@ public final class MpvUtil {
     }
 
     private static double getSubtitlePosition() {
-        return Util.constrainValue(DEFAULT_SUB_POS - SubtitleSetting.getPosition(), MIN_SUB_POS, MAX_SUB_POS);
+        return Util.constrainValue((float) (DEFAULT_SUB_POS - SubtitleSetting.getPosition()), (float) MIN_SUB_POS, (float) MAX_SUB_POS);
     }
 }
