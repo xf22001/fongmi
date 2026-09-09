@@ -16,6 +16,7 @@ import com.fongmi.android.tv.playback.PlaybackAction;
 import com.fongmi.android.tv.player.PlayerManager;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.ui.activity.PlaybackActivity;
+import com.fongmi.mediacompat.Capability;
 
 public final class PlayerEngineDialog extends BaseBottomSheetDialog {
 
@@ -51,6 +52,7 @@ public final class PlayerEngineDialog extends BaseBottomSheetDialog {
 
     @Override
     protected void initView() {
+        binding.mpv.setVisibility(Capability.mpv() ? View.VISIBLE : View.GONE);
         setSelected();
         getSelectedView().requestFocus();
     }
@@ -90,7 +92,7 @@ public final class PlayerEngineDialog extends BaseBottomSheetDialog {
     }
 
     private View getSelectedView() {
-        return getCurrentEngine(player) == PlayerSetting.ENGINE_MPV ? binding.mpv : binding.exo;
+        return Capability.mpv() && getCurrentEngine(player) == PlayerSetting.ENGINE_MPV ? binding.mpv : binding.exo;
     }
 
     private PlaybackActivity getPlaybackActivity() {

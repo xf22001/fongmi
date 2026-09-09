@@ -4,6 +4,7 @@
 lib-*.aar
 build/
 /media*
+!/mediacompat/
 /Release
 /local.properties
 

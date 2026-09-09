@@ -1,0 +1,44 @@
+plugins {
+    alias libs.plugins.android.library
+}
+
+// 隔离层：为 FongMi 闭源 fork Media3 独有的 API 提供开源 Media3 下的占位实现。
+// 类仍声明在 androidx.media3.* 包下（与 fork 完全同名同包），
+// 这样 app 侧源码无需任何 import 改动，也不会与上游热点文件产生冲突。
+android {
+    namespace = 'com.fongmi.mediacompat'
+
+    compileSdk {
+        version = release(36) {
+            it.minorApiLevel = 1
+        }
+    }
+
+    defaultConfig {
+        minSdk 23
+        targetSdk 36
+    }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled = true
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        disable 'InvalidPackage'
+    }
+}
+
+dependencies {
+    def media3Version = libs.versions.media3.get()
+    api libs.annotation
+    api libs.okhttp
+    api libs.guava
+    api "androidx.media3:media3-common:${media3Version}"
+    api "androidx.media3:media3-datasource:${media3Version}"
+    api "androidx.media3:media3-exoplayer:${media3Version}"
+    api "androidx.media3:media3-extractor:${media3Version}"
+    api "androidx.media3:media3-ui:${media3Version}"
+    coreLibraryDesugaring libs.desugar
+}

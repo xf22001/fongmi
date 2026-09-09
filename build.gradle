@@ -11,6 +11,9 @@ tasks.register('clean', Delete) {
 project(':app').tasks.matching { it.name ==~ /assemble.+Release/ }.configureEach {
     doLast {
         copy {
+            // 两个源目录会出现同名 APK（finalize 中间产物与最终产物），
+            // 非首次构建时必然重复。以后者（outputs/apk 最终包）为准。
+            duplicatesStrategy = DuplicatesStrategy.INCLUDE
             from fileTree("$rootDir/app/build/intermediates/apk") { include '**/finalize*/*.apk' }
             from fileTree("$rootDir/app/build/outputs/apk") { include '**/release/*.apk' }
             into "$rootDir/Release/apk"
