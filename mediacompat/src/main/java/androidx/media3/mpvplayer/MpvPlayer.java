@@ -67,12 +67,17 @@ public interface MpvPlayer extends Player {
     }
 
     class Builder {
-        public Builder(android.content.Context context) {}
+
+        private final android.content.Context context;
+
+        public Builder(android.content.Context context) {
+            this.context = context;
+        }
+
         public Builder setDecode(int decode) { return this; }
         public Builder setConfig(MpvPlayerConfig config) { return this; }
         public MpvPlayer build() {
-            ExoPlayer exoPlayer = new ExoPlayer.Builder(com.fongmi.android.tv.App.get()).build();
-            return new SafeMpvPlayer(exoPlayer);
+            return new SafeMpvPlayer(new ExoPlayer.Builder(context).build());
         }
     }
 }

@@ -10,6 +10,7 @@ import androidx.viewbinding.ViewBinding;
 
 import com.fongmi.android.tv.R;
 import com.fongmi.android.tv.databinding.ActivitySettingDecodeBinding;
+import com.fongmi.mediacompat.Capability;
 import com.fongmi.android.tv.setting.DecodeSetting;
 import com.fongmi.android.tv.setting.PlayerSetting;
 import com.fongmi.android.tv.setting.Setting;
@@ -52,6 +53,7 @@ public class SettingDecodeActivity extends BaseActivity {
         mBinding.tunnel.setVisibility(exo ? View.VISIBLE : View.GONE);
         mBinding.audioPrefer.setVisibility(exo ? View.VISIBLE : View.GONE);
         mBinding.videoPrefer.setVisibility(exo ? View.VISIBLE : View.GONE);
+        mBinding.dolbyVisionOutput.setVisibility(Capability.dolbyVisionOutputPolicy() ? View.VISIBLE : View.GONE);
     }
 
     private void refresh() {

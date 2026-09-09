@@ -21,6 +21,7 @@ public final class ExoPlayerEffect implements PlayerEffect {
     private boolean previewVideoEffect;
     private boolean previewAudioEffect;
     private boolean audioEffectFailed;
+    private boolean videoEffectFailed;
     private ExoPlayer player;
 
     public ExoPlayerEffect() {
@@ -42,25 +43,39 @@ public final class ExoPlayerEffect implements PlayerEffect {
 
     @Override
     public boolean supportsVideoEffect() {
-        return false;
+        return !videoEffectFailed;
     }
 
     @Override
     public int getVideoEffectError() {
-        return R.string.error_video_effect_unsupported;
+        return videoEffectFailed ? R.string.error_video_effect_unsupported : 0;
     }
 
     @Override
     public void applyVideoEffect() {
+        if (player == null) return;
+        if (!previewVideoEffect && !VideoSetting.isEnabled()) {
+            videoEffectController.clear(player);
+            return;
+        }
+        try {
+            videoEffectController.apply(player, getVideoProfile());
+            videoEffectFailed = false;
+        } catch (Throwable e) {
+            videoEffectFailed = true;
+        }
     }
 
     @Override
     public void previewVideoEffect(boolean original) {
+        if (previewVideoEffect == original) return;
+        previewVideoEffect = original;
+        applyVideoEffect();
     }
 
     @Override
     public boolean supportsAudioEffect() {
-        return false;
+        return !audioEffectFailed;
     }
 
     @Override
@@ -70,12 +85,13 @@ public final class ExoPlayerEffect implements PlayerEffect {
 
     @Override
     public int getAudioEffectError() {
-        return R.string.error_audio_effect_unsupported;
+        return audioEffectFailed ? R.string.error_audio_effect_apply : 0;
     }
 
     @Override
     public void applyAudioEffect() {
-        clearAudioEffect();
+        if (player == null) return;
+        applyAudioConfig(getAudioChannelCount());
     }
 
     public void clearAudioEffect() {
@@ -85,6 +101,9 @@ public final class ExoPlayerEffect implements PlayerEffect {
 
     @Override
     public void previewAudioEffect(boolean original) {
+        if (previewAudioEffect == original) return;
+        previewAudioEffect = original;
+        applyAudioEffect();
     }
 
     @Override
